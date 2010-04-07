@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="hello">Hello World, Map!</string>
-    <string name="app_name">BikeFinder</string>
+    <string name="app_name">SykkelNav Oslo</string>
 <string name="rackdialog_title">Om stativet</string>
 <string name="rackdialog_fetching">Henter data om ledige låser og sykler...</string>
 <string name="rackdialog_freebikes">Ledige sykler: %d</string>
 <string name="rackdialog_freelocks">Ledige låser: %d</string>
 <string name="rackdialog_not_online">Ingen kontakt med stativet.</string>
+<string name="rackdialog_dismiss">OK</string>
 </resources>

@@ -2,14 +2,19 @@ package rogerkk.bikefinder;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Handler;
 import android.os.Message;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.TextView;
 
-public class RackInfoDialog extends Dialog {
+public class RackInfoDialog extends Dialog implements OnClickListener {
 	int rackId;
 	TextView descriptionText;
 	TextView infoText;
+	Button dismissButton;
 	
 	// Handler for updating information in dialog
 	Handler handler = new Handler() {
@@ -36,10 +41,17 @@ public class RackInfoDialog extends Dialog {
 		
 		setTitle(R.string.rackdialog_title);
 		setContentView(R.layout.rackinfo_dialog);
+		
 		descriptionText = (TextView)findViewById(R.id.description);
-		infoText = (TextView)findViewById(R.id.info);
 		descriptionText.setText(rackDescription);
+
+		infoText = (TextView)findViewById(R.id.info);
 		infoText.setText(R.string.rackdialog_fetching);
+
+		dismissButton = (Button)findViewById(R.id.dismiss);
+		dismissButton.setText(R.string.rackdialog_dismiss);
+		dismissButton.setOnClickListener(this);
+		
 
 		Thread background = new Thread(new Runnable() {
 			public void run() {
@@ -62,5 +74,8 @@ public class RackInfoDialog extends Dialog {
 		background.start();
 	}
 
-	
+	public void onClick(View v) {
+		dismiss(); // There's only one button in this dialog anyway.
+		
+	}
 }
