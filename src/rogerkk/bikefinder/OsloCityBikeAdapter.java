@@ -52,7 +52,7 @@ public class OsloCityBikeAdapter {
         	
         	for (int i = 0; i < elements.getLength(); i++) {
         		Integer rackId = Integer.valueOf(elements.item(i).getFirstChild().getNodeValue());
-        		if (rackId < 500) { // Racks with id over 500 seems to be for testing
+        		if (rackId < 500) { // Racks with id over 500 seem to be for testing
         			rackIds.add(rackId);
         		}
 			}

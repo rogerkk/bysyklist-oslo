@@ -4,14 +4,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import android.app.Activity;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
+import android.view.Window;
 
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.ItemizedOverlay;
@@ -21,36 +25,66 @@ import com.google.android.maps.MyLocationOverlay;
 import com.google.android.maps.OverlayItem;
 
 public class Map extends MapActivity {
+	MapView map;
+	ProgressDialog progressDialog;
+	RacksOverlay rackOverlay;
+	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.main);
         
-        MapView map = (MapView)findViewById(R.id.map);
+        map = (MapView)findViewById(R.id.map);
         map.setBuiltInZoomControls(true);
-
-        DbAdapter db = new DbAdapter(this).open();
-        
-        OsloCityBikeAdapter ocbAdapter = new OsloCityBikeAdapter();
-        ArrayList<Integer> rackIds = ocbAdapter.getRacks();
-
-        if (!db.hasRackData()) {
-        	addRacksToDb(db, ocbAdapter, rackIds);
-        }
-        
-        setCenterForStartup(map);
+        setProgressBarIndeterminateVisibility(true);
         
         // initialize icon
 		Drawable icon = getResources().getDrawable(R.drawable.bubble);
 		icon.setBounds(0, 0, icon.getIntrinsicWidth(), icon
 				.getIntrinsicHeight());
- 
-		// create my overlay and show it
-		RacksOverlay overlay = new RacksOverlay(icon);
+		
+        // create my overlay and show it
+        rackOverlay = new RacksOverlay(icon);
+        
+        new Thread(new Runnable(){
+        	public void run(){
+        		Looper.prepare();
+        		initializeMap();
+				     
+        		runOnUiThread(new Runnable() {
+        			public void run() {
+        				setProgressBarIndeterminateVisibility(false);
+        			}
+        		});
+//        		progressDialog.dismiss();
+        	}
+        }).start();
+        
+    }
+    
+    private void initializeMap() {
+        setCenterForStartup(map);
+        
+        // create overlay for my position and show it
+        MyLocationOverlay me = new MyLocationOverlay(this, map);
+        me.enableMyLocation();
+        map.getOverlays().add(me);
+    	
+        DbAdapter db = new DbAdapter(this).open();
+        OsloCityBikeAdapter ocbAdapter = new OsloCityBikeAdapter();
+        
+        if (!db.hasRackData()) {
+        	ArrayList<Integer> rackIds = ocbAdapter.getRacks();
+			addRacksToDb(db, ocbAdapter, rackIds);
+        }
 		
 		// Get racks from database and add to overlay
+        map.getOverlays().add(rackOverlay);  
 		Rack rack;
+		ArrayList<Integer> rackIds = db.getRackIds();
 		for (Integer rackId : rackIds) {
 			Log.d("Rack", "Adding rack to overlay. ID: ".concat(rackId.toString()));
 //			Rack rack = new Rack((int)rackId);
@@ -59,20 +93,17 @@ public class Map extends MapActivity {
 			rack = db.getRack(rackId);
 			if (rack.hasLocationInfo()) {
 				OverlayItem item = new OverlayItem(rack.getLocation(), rack.getDescription(), "1");
-				overlay.addItem(item, rack.getId());
+				rackOverlay.addItem(item, rack.getId());
 			}
 		}
-		
-        map.getOverlays().add(overlay);
-        
-
-        // create overlay for my position and show it
-        MyLocationOverlay me = new MyLocationOverlay(this, map);
-        me.enableMyLocation();
-        map.getOverlays().add(me);
-        
-        db.close();
+		db.close();
+		map.postInvalidate();
     }
+    
+    protected void onStart() {
+    	super.onStart();
+    }
+    
 
 	/**
 	 * @param db
@@ -94,6 +125,14 @@ public class Map extends MapActivity {
 	 */
 	private void setCenterForStartup(MapView map) {
 		Location location = getCurrentLocation();
+		
+		// Set location to downtown Oslo if no location could be retrieved from device.
+		if (location == null) {
+			location = new Location("manual");
+			location.setLatitude(59.912);
+			location.setLongitude(10.7453);
+		}
+		
         Double latitude = location.getLatitude()*1E6;
         Double longitude = location.getLongitude()*1E6;
         
@@ -122,7 +161,6 @@ public class Map extends MapActivity {
 
 	@Override
 	protected boolean isRouteDisplayed() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 	
@@ -134,6 +172,7 @@ public class Map extends MapActivity {
 		public RacksOverlay(Drawable marker) {
 			super(marker);
 			this.marker = marker;
+			boundCenterBottom(marker);
 		}
 		
 		public void addItem(OverlayItem item, int rackId) {
@@ -151,7 +190,6 @@ public class Map extends MapActivity {
 		@Override
 		public void draw(Canvas canvas, MapView mapView, boolean shadow) {
 			super.draw(canvas, mapView, shadow);
-			boundCenterBottom(marker); // TODO: Move to constructor?
 		}
 
 		@Override
@@ -169,8 +207,5 @@ public class Map extends MapActivity {
 			
 			return true;
 		}
-		
-		
 	}
-	
 }

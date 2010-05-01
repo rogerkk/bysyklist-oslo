@@ -1,5 +1,8 @@
 package rogerkk.bikefinder;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -57,6 +60,10 @@ public class DbAdapter {
 		db.insert(DbAdapter.RACK_TABLE, null, cv);
 	}
 	
+	public void clear() {
+		db.delete(DbAdapter.RACK_TABLE, null, null);
+	}
+	
 	public Rack getRack(int id) {
 		String[] columns={DbAdapter.DESCRIPTION, DbAdapter.LATITUDE, DbAdapter.LONGITUDE};
 		
@@ -72,6 +79,22 @@ public class DbAdapter {
 		cursor.close();
 
 		return new Rack(id, description, latitude, longitude);
+	}
+	
+	public ArrayList<Integer> getRackIds() {
+		String[] columns={DbAdapter.ID};
+		
+		Cursor cursor = db.query(DbAdapter.RACK_TABLE, 
+								columns, 
+								null,null,null, null, null);
+		
+		ArrayList<Integer> rackIds = new ArrayList<Integer>();
+		while (cursor.moveToNext()) {
+			rackIds.add(cursor.getInt(cursor.getColumnIndex(DbAdapter.ID)));
+		}
+		cursor.close();
+		
+		return rackIds;
 	}
 	
 	public boolean hasRackData() {
