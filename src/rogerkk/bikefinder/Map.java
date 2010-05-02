@@ -4,22 +4,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.Window;
 
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.ItemizedOverlay;
 import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.MyLocationOverlay;
 import com.google.android.maps.OverlayItem;
@@ -27,7 +30,8 @@ import com.google.android.maps.OverlayItem;
 public class Map extends MapActivity {
 	MapView map;
 	ProgressDialog progressDialog;
-	RacksOverlay rackOverlay;
+	MyLocationOverlay myLocation;
+	MapController mapController;
 	
     /** Called when the activity is first created. */
     @Override
@@ -39,17 +43,22 @@ public class Map extends MapActivity {
         
         map = (MapView)findViewById(R.id.map);
         map.setBuiltInZoomControls(true);
+        mapController = map.getController();
+        mapController.setZoom(16);
+
         setProgressBarIndeterminateVisibility(true);
-        
-        // initialize icon
-		Drawable icon = getResources().getDrawable(R.drawable.bubble);
-		icon.setBounds(0, 0, icon.getIntrinsicWidth(), icon
-				.getIntrinsicHeight());
-		
-        // create my overlay and show it
-        rackOverlay = new RacksOverlay(icon);
-        
-        new Thread(new Runnable(){
+
+        // create overlay for my position and show it
+        myLocation = new MyLocationOverlay(this, map);
+        map.getOverlays().add(myLocation);
+        myLocation.enableMyLocation();
+    	
+        Location location = myLocation.getLastFix();
+		if (location != null) {
+			mapController.animateTo(new GeoPoint((int) (location.getLatitude()*1E6), (int) (location.getLongitude()*1E6)));
+		}
+
+		new Thread(new Runnable(){
         	public void run(){
         		Looper.prepare();
         		initializeMap();
@@ -59,49 +68,94 @@ public class Map extends MapActivity {
         				setProgressBarIndeterminateVisibility(false);
         			}
         		});
-//        		progressDialog.dismiss();
         	}
         }).start();
         
     }
     
     private void initializeMap() {
-        setCenterForStartup(map);
-        
-        // create overlay for my position and show it
-        MyLocationOverlay me = new MyLocationOverlay(this, map);
-        me.enableMyLocation();
-        map.getOverlays().add(me);
-    	
+
         DbAdapter db = new DbAdapter(this).open();
         OsloCityBikeAdapter ocbAdapter = new OsloCityBikeAdapter();
         
         if (!db.hasRackData()) {
-        	ArrayList<Integer> rackIds = ocbAdapter.getRacks();
-			addRacksToDb(db, ocbAdapter, rackIds);
+        	initializeDB(db, ocbAdapter);
         }
 		
-		// Get racks from database and add to overlay
-        map.getOverlays().add(rackOverlay);  
+        RacksOverlay rackOverlay = populateRackOverlay(db);
+		map.getOverlays().add(rackOverlay);  
+		map.postInvalidate();
+		db.close();
+    }
+
+	/**
+	 * @param db
+	 * @return
+	 */
+	private RacksOverlay populateRackOverlay(DbAdapter db) {
+		RacksOverlay rackOverlay = initializeRackOverlay();
+        
+        // Get racks from database and add to overlay
 		Rack rack;
 		ArrayList<Integer> rackIds = db.getRackIds();
 		for (Integer rackId : rackIds) {
 			Log.d("Rack", "Adding rack to overlay. ID: ".concat(rackId.toString()));
-//			Rack rack = new Rack((int)rackId);
-//			db.insertRack(rack);
 			
+			Log.d("Rack", "Getting rack from DB ".concat(Integer.toString(rackId)));
 			rack = db.getRack(rackId);
+			Log.d("Rack", "Retrieved rack from DB");
 			if (rack.hasLocationInfo()) {
+				Log.d("Rack", "Creating overlay item");
 				OverlayItem item = new OverlayItem(rack.getLocation(), rack.getDescription(), "1");
+				Log.d("Rack", "Adding rack to overlay");
 				rackOverlay.addItem(item, rack.getId());
 			}
 		}
-		db.close();
-		map.postInvalidate();
-    }
+		return rackOverlay;
+	}
+
+	/**
+	 * @return
+	 */
+	private RacksOverlay initializeRackOverlay() {
+		Drawable icon = getResources().getDrawable(R.drawable.bubble);
+		icon.setBounds(0, 0, icon.getIntrinsicWidth(), icon
+				.getIntrinsicHeight());
+        RacksOverlay rackOverlay = new RacksOverlay(icon);
+		return rackOverlay;
+	}
+
+	/**
+	 * @param db
+	 * @param ocbAdapter
+	 */
+	private void initializeDB(DbAdapter db, OsloCityBikeAdapter ocbAdapter) {
+		// This is the first run, populate database with rack info
+		ArrayList<Integer> rackIds = new ArrayList<Integer>();
+		try {
+			rackIds = ocbAdapter.getRacks();
+			addRacksToDb(db, ocbAdapter, rackIds);
+		} catch (Exception e) {
+			Log.d("FetchRackData", "Communication with ClearChannel failed.", e);
+			
+			// TODO: Show error dialog on UI thread
+		}
+	}
     
     protected void onStart() {
     	super.onStart();
+    	myLocation.enableMyLocation();
+    	animateToMyLocation();
+    }
+    
+    protected void onResume() {
+    	super.onResume();
+    	animateToMyLocation();
+    }
+    
+    protected void onStop() {
+    	super.onStop();
+    	myLocation.disableMyLocation();
     }
     
 
@@ -114,49 +168,15 @@ public class Map extends MapActivity {
 			ArrayList<Integer> rackIds) {
 		// Add racks to database
 		for (Integer rackId : rackIds) {
-			Rack rack = ocbAdapter.getRack(rackId);
-			Log.d("Rack", "Inserting rack into DB. ID: ".concat(rackId.toString()));
-			db.insertRack(rack);
+			Rack rack;
+			try {
+				rack = ocbAdapter.getRack(rackId);
+				Log.d("Rack", "Inserting rack into DB. ID: ".concat(rackId.toString()));
+				db.insertRack(rack);
+			} catch (Exception e) {
+				Log.d("Map", e.getStackTrace().toString());
+			}
 		}
-	}
-
-	/**
-	 * @param map
-	 */
-	private void setCenterForStartup(MapView map) {
-		Location location = getCurrentLocation();
-		
-		// Set location to downtown Oslo if no location could be retrieved from device.
-		if (location == null) {
-			location = new Location("manual");
-			location.setLatitude(59.912);
-			location.setLongitude(10.7453);
-		}
-		
-        Double latitude = location.getLatitude()*1E6;
-        Double longitude = location.getLongitude()*1E6;
-        
-        map.getController().setCenter(new GeoPoint(latitude.intValue(), longitude.intValue()));
-//        map.getController().setCenter(rack.location);
-        map.getController().setZoom(16);
-	}
-
-	/**
-	 * @return
-	 */
-	private Location getCurrentLocation() {
-		LocationManager locManager = (LocationManager)getSystemService(LOCATION_SERVICE);
-        
-        Criteria locProviderCriteria = new Criteria();
-        locProviderCriteria.setAccuracy(Criteria.ACCURACY_COARSE);
-        locProviderCriteria.setAltitudeRequired(false);
-        locProviderCriteria.setBearingRequired(false);
-        locProviderCriteria.setSpeedRequired(false);
-        
-        String provider = locManager.getBestProvider(locProviderCriteria, true);
-        
-        Location location = locManager.getLastKnownLocation(provider);
-		return location;
 	}
 
 	@Override
@@ -164,10 +184,38 @@ public class Map extends MapActivity {
 		return false;
 	}
 	
+	/* Menu */
+	public boolean onCreateOptionsMenu(Menu menu) {
+	    MenuInflater inflater = getMenuInflater();
+	    inflater.inflate(R.menu.icon_menu, menu);
+	    return true;
+	}
+	
+	/* Handles menu item selections */
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    switch (item.getItemId()) {
+	    case R.id.my_location:
+	    	animateToMyLocation();
+	        return true;
+	    }
+	    return false;
+	}
+
+	/**
+	 * 
+	 */
+	private void animateToMyLocation() {
+		GeoPoint point = myLocation.getMyLocation();
+		if (point != null) {
+			mapController.animateTo(point);
+		}
+	}
+	
 	private class RacksOverlay extends ItemizedOverlay<OverlayItem> {
 		private Drawable marker=null;
 		private List<OverlayItem> items = new ArrayList<OverlayItem>();
 		private HashMap<Integer,Integer> overlayToRackMapping = new HashMap<Integer, Integer>();
+		private int mSize;
 		
 		public RacksOverlay(Drawable marker) {
 			super(marker);

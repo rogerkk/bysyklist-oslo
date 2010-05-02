@@ -57,17 +57,21 @@ public class RackInfoDialog extends Dialog implements OnClickListener {
 			public void run() {
 				// TODO: Run in background thread
 				OsloCityBikeAdapter ocbAdapter= new OsloCityBikeAdapter();
-				Rack rack = ocbAdapter.getRack(rackId);
 				Message msg = Message.obtain();
-				if (rack.isOnline()) {
-					msg.arg1 = rack.getNumberOfReadyBikes();
-					msg.arg2 = rack.getNumberOfEmptyLocks();
-					handler.sendMessage(msg);
-				} else {
-					msg.arg1 = -1; // Implies that rack is offline
+				
+				try {
+					Rack rack = ocbAdapter.getRack(rackId);
+					if (rack.isOnline()) {
+						msg.arg1 = rack.getNumberOfReadyBikes();
+						msg.arg2 = rack.getNumberOfEmptyLocks();
+					} else {
+						msg.arg1 = -1; // Implies that rack is offline
+					}
+				} catch (Exception e) {
+					msg.arg1 = -1; // TODO: Return different error code when communication with entire ClearChannel system failed
+				} finally {
 					handler.sendMessage(msg);
 				}
-				
 			}
 		});
 		

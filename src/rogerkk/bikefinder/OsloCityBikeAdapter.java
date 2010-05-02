@@ -40,13 +40,16 @@ public class OsloCityBikeAdapter {
      * Get all IDs corresponding to all current racks
      * 
      * @return
+     * @throws URISyntaxException 
+     * @throws IOException 
      */
-    public ArrayList<Integer> getRacks() {
+    public ArrayList<Integer> getRacks() throws OsloCityBikeCommunicationException {
     	ArrayList<Integer> rackIds = new ArrayList<Integer>();
         String wsMethod ="getRacks";
-        String xml = makeWebServiceCall(wsMethod);
         
+        String xml;
         try {
+        	xml = makeWebServiceCall(wsMethod);
         	Element docElement = getXmlDocumentElement(xml);
         	NodeList elements = docElement.getElementsByTagName("station");
         	
@@ -55,15 +58,15 @@ public class OsloCityBikeAdapter {
         		if (rackId < 500) { // Racks with id over 500 seem to be for testing
         			rackIds.add(rackId);
         		}
-			}
+        	}
         } catch (Exception e) {
-        	// TODO: Add proper error handling
-        }
+        	throw new OsloCityBikeCommunicationException(e);
+		} 
         
         return rackIds;
     }
     
-    public Rack getRack(int id) {
+    public Rack getRack(int id) throws OsloCityBikeException {
 		HashMap<String, String> rackMap = getRackInfo(id);
 		
 		Boolean online = null;
@@ -110,7 +113,7 @@ public class OsloCityBikeAdapter {
 		return rack;
     }
     
-    private HashMap<String, String> getRackInfo(int id) {
+    private HashMap<String, String> getRackInfo(int id) throws OsloCityBikeException {
         String wsMethod = "getRack?id=".concat(String.valueOf(id));
         
         /* Get rack info XML.
@@ -129,7 +132,13 @@ public class OsloCityBikeAdapter {
          *        </station>
          * </string>
          */
-        String xml = makeWebServiceCall(wsMethod);
+        
+        String xml;
+        try {
+        	xml = makeWebServiceCall(wsMethod);
+        } catch (Exception e) {
+        	throw new OsloCityBikeCommunicationException(e);
+        }
         
         try {
         	Element docElement = getXmlDocumentElement(xml);
@@ -149,9 +158,8 @@ public class OsloCityBikeAdapter {
 
             return rackMap;
         } catch (Exception e) {
-        	e.printStackTrace();
-            // Log something
-            return null;
+        	Log.e("OsloCityBikeAdapter", e.getStackTrace().toString());
+            throw new OsloCityBikeParseException(e);
         }
     }
 
@@ -186,22 +194,15 @@ public class OsloCityBikeAdapter {
      * @param method String
      * @param xml
      * @return
+     * @throws Exception 
      */
-    private String makeWebServiceCall(String method) {
+    private String makeWebServiceCall(String method) throws IOException, URISyntaxException {
         
-        try {
-            httpGet.setURI(new URI("http://smartbikeportal.clearchannel.no/public/mobapp/maq.asmx/".concat(method)));
-        } catch (URISyntaxException e) {
-            // Log something
-        }
+        httpGet.setURI(new URI("http://smartbikeportal.clearchannel.no/public/mobapp/maq.asmx/".concat(method)));
         
         HttpResponse httpResponse = null;
-        
-        try {
-            httpResponse = httpClient.execute(httpGet);
-        } catch (Exception e) {
-            Log.e("test", e.toString());
-        }
+        httpResponse = httpClient.execute(httpGet);
+
         try {
             String returnXml = "";
             returnXml = convertStreamToString(httpResponse.getEntity().getContent()).replace("\n", "");
@@ -210,9 +211,9 @@ public class OsloCityBikeAdapter {
             
             return returnXml;
         } catch (IOException e) {
-            
+        	Log.e("OsloCityBikeAdapter", e.getStackTrace().toString());
+        	throw e;
         }
-        return null;
     }
     
     private static String convertStreamToString(InputStream is) {
@@ -241,6 +242,23 @@ public class OsloCityBikeAdapter {
         }
         return sb.toString();
     }
+    
+    private class OsloCityBikeException extends Exception {
+    	public OsloCityBikeException(Exception e) {
+    		super(e);
+    	}
+    }
+    
+    private class OsloCityBikeCommunicationException extends OsloCityBikeException{
+    	public OsloCityBikeCommunicationException(Exception e) {
+    		super(e);
+    	}
+    }
 
+    private class OsloCityBikeParseException extends OsloCityBikeException {
+    	public OsloCityBikeParseException(Exception e) {
+    		super(e);
+    	}
+    }
 
 }

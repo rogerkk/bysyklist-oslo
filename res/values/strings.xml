@@ -7,4 +7,5 @@
 <string name="rackdialog_freelocks">Ledige låser: %d</string>
 <string name="rackdialog_not_online">Ingen kontakt med stativet.</string>
 <string name="rackdialog_dismiss">OK</string>
+<string name="menu_my_location">Min posisjon</string>
 </resources>
