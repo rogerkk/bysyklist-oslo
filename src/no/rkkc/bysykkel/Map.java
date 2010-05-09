@@ -28,12 +28,9 @@ import com.google.android.maps.OverlayItem;
 
 public class Map extends MapActivity {
 	MapView map;
-	ProgressDialog progressDialog;
 	MyLocationOverlay myLocation;
 	MapController mapController;
 	DbAdapter db;
-	
-	ProgressDialog pd;
 	
 	static final int DIALOG_DBINIT = 0; // Progressbar when initializing the database the first time the app is run.
 	
@@ -71,10 +68,7 @@ public class Map extends MapActivity {
 		
 		db = new DbAdapter(Map.this, "racks").open();
 		if (!db.hasRackData()) {
-			pd = ProgressDialog.show(this,
-					"Første oppstart",
-					"Laster ned informasjon om alle stativer.",
-					true, false);
+			showDialog(DIALOG_DBINIT);
 		}
 			
 		new Thread(new Runnable(){
@@ -89,7 +83,7 @@ public class Map extends MapActivity {
 					// Initialise database
 					OsloCityBikeAdapter osloCityBikeAdapter = new OsloCityBikeAdapter();
 					initializeDB(db, osloCityBikeAdapter);
-					pd.dismiss();
+					dismissDialog(DIALOG_DBINIT);
 				}
 				
         		initializeMap(db);
@@ -188,14 +182,21 @@ public class Map extends MapActivity {
     	myLocation.disableMyLocation();
     }
     
-//    protected Dialog onCreateDialog(int id) {
-//    	switch (id) {
-//    		case DIALOG_DBINIT:
-//    			
-//    			break;
-//    	}
-//    }
-//    
+    protected Dialog onCreateDialog(int id) {
+    	switch (id) {
+    		case DIALOG_DBINIT:
+    			ProgressDialog initDialog = new ProgressDialog(this);
+    			initDialog.setTitle("Første oppstart");
+    			initDialog.setMessage("Laster ned informasjon om alle sykkelstativene");
+    			initDialog.setIndeterminate(true);
+    			initDialog.setCancelable(true);
+    			
+    			return initDialog;
+    	}
+    	
+    	return super.onCreateDialog(id);
+    }
+    
 
 	/**
 	 * @param db
