@@ -4,8 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import no.rkkc.bysykkel.R;
-
+import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.graphics.Canvas;
@@ -33,6 +32,9 @@ public class Map extends MapActivity {
 	DbAdapter db;
 	
 	static final int DIALOG_DBINIT = 0; // Progressbar when initializing the database the first time the app is run.
+	static final int DIALOG_COMMUNICATION_ERROR = 1; // Something has failed during communication with servers
+	
+	private static final String TAG = "Bysyklist";
 	
     /** Called when the activity is first created. */
     @Override
@@ -40,32 +42,15 @@ public class Map extends MapActivity {
         super.onCreate(savedInstanceState);
 
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        setProgressBarIndeterminateVisibility(true);
         setContentView(R.layout.main);
         
         map = (MapView)findViewById(R.id.map);
         map.setBuiltInZoomControls(true);
         mapController = map.getController();
-//        mapController.setCenter(new GeoPoint((int)(59.914653*1E6), (int) (10.740681*1E6)));
-//        mapController.setZoom(13);
 
-        setProgressBarIndeterminateVisibility(true);
-
-        // create overlay for my position and show it
-        myLocation = new MyLocationOverlay(this, map);
-        myLocation.enableMyLocation();
-        map.getOverlays().add(myLocation);
-        myLocation.runOnFirstFix(new Runnable() {
-			public void run() {
-				mapController.setZoom(16);
-				animateToMyLocation();
-			}
-        });
+        setupMyLocation();
     	
-        GeoPoint point = myLocation.getMyLocation();
-		if (point != null) {
-			mapController.animateTo(point);
-		}
-		
 		db = new DbAdapter(Map.this, "racks").open();
 		if (!db.hasRackData()) {
 			showDialog(DIALOG_DBINIT);
@@ -80,9 +65,7 @@ public class Map extends MapActivity {
 					mapController.setZoom(13);
 					mapController.setCenter(new GeoPoint((int)(59.914653*1E6), (int) (10.740681*1E6)));
 					
-					// Initialise database
-					OsloCityBikeAdapter osloCityBikeAdapter = new OsloCityBikeAdapter();
-					initializeDB(db, osloCityBikeAdapter);
+					initializeDb(db);
 					dismissDialog(DIALOG_DBINIT);
 				}
 				
@@ -95,15 +78,27 @@ public class Map extends MapActivity {
         		
 			}
 			}).start();
-		
-
-		new Thread(new Runnable(){
-        	public void run(){
-
-        	}
-        }).start();
-        
     }
+
+	/**
+	 * 
+	 */
+	private void setupMyLocation() {
+		myLocation = new MyLocationOverlay(this, map);
+        myLocation.enableMyLocation();
+        myLocation.runOnFirstFix(new Runnable() {
+			public void run() {
+				mapController.setZoom(16);
+				animateToMyLocation();
+			}
+        });
+        map.getOverlays().add(myLocation);
+        
+        GeoPoint point = myLocation.getMyLocation();
+		if (point != null) {
+			mapController.animateTo(point);
+		}
+	}
     
     private void initializeMap(DbAdapter db) {
         RacksOverlay rackOverlay = populateRackOverlay(db);
@@ -123,15 +118,15 @@ public class Map extends MapActivity {
 		Rack rack;
 		ArrayList<Integer> rackIds = db.getRackIds();
 		for (Integer rackId : rackIds) {
-			Log.d("Rack", "Adding rack to overlay. ID: ".concat(rackId.toString()));
+			Log.d(TAG, "Adding rack to overlay. ID: ".concat(rackId.toString()));
 			
-			Log.d("Rack", "Getting rack from DB ".concat(Integer.toString(rackId)));
+			Log.d(TAG, "Getting rack from DB ".concat(Integer.toString(rackId)));
 			rack = db.getRack(rackId);
-			Log.d("Rack", "Retrieved rack from DB");
+			Log.d(TAG, "Retrieved rack from DB");
 			if (rack.hasLocationInfo()) {
-				Log.d("Rack", "Creating overlay item");
+				Log.d(TAG, "Creating overlay item");
 				OverlayItem item = new OverlayItem(rack.getLocation(), rack.getDescription(), "1");
-				Log.d("Rack", "Adding rack to overlay");
+				Log.d(TAG, "Adding rack to overlay");
 				rackOverlay.addItem(item, rack.getId());
 			}
 		}
@@ -150,19 +145,20 @@ public class Map extends MapActivity {
 	}
 
 	/**
+	 * On first run, populate the database with rack information
+	 * 
 	 * @param db
 	 * @param ocbAdapter
 	 */
-	private void initializeDB(DbAdapter db, OsloCityBikeAdapter ocbAdapter) {
-		// This is the first run, populate database with rack info
+	private void initializeDb(DbAdapter db) {
+		OsloCityBikeAdapter osloCityBikeAdapter = new OsloCityBikeAdapter();
 		ArrayList<Integer> rackIds = new ArrayList<Integer>();
 		try {
-			rackIds = ocbAdapter.getRacks();
-			addRacksToDb(db, ocbAdapter, rackIds);
-		} catch (Exception e) {
-			Log.d("FetchRackData", "Communication with ClearChannel failed.", e);
-			
-			// TODO: Show error dialog on UI thread
+			rackIds = osloCityBikeAdapter.getRacks();
+			addRacksToDb(db, osloCityBikeAdapter, rackIds);
+		} catch (OsloCityBikeException e) {
+			Log.e("FetchRackData", "Communication with ClearChannel failed.", e);
+			// TODO: Show error dialog to user?		
 		}
 	}
     
@@ -186,12 +182,20 @@ public class Map extends MapActivity {
     	switch (id) {
     		case DIALOG_DBINIT:
     			ProgressDialog initDialog = new ProgressDialog(this);
-    			initDialog.setTitle("Første oppstart");
-    			initDialog.setMessage("Laster ned informasjon om alle sykkelstativene");
+    			initDialog.setTitle(getString(R.string.initdialog_title));
+    			initDialog.setMessage(getString(R.string.initdialog_message));
     			initDialog.setIndeterminate(true);
     			initDialog.setCancelable(true);
     			
     			return initDialog;
+//    		case DIALOG_COMMUNICATION_ERROR:
+//    			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//    			builder.setTitle("Kommunikasjonsfeil");
+//    			builder.setMessage("Kommunikasjon med ClearChannels servere har feilet. Forsøk igjen.");
+//    			builder.setPositiveButton("OK", null);
+//    			builder.setCancelable(false);
+//    			
+//    			return builder.create();
     	}
     	
     	return super.onCreateDialog(id);
@@ -209,11 +213,11 @@ public class Map extends MapActivity {
 		for (Integer rackId : rackIds) {
 			Rack rack;
 			try {
+				Log.d(TAG, "Inserting rack into DB. ID: ".concat(rackId.toString()));
 				rack = ocbAdapter.getRack(rackId);
-				Log.d("Rack", "Inserting rack into DB. ID: ".concat(rackId.toString()));
 				db.insertRack(rack);
 			} catch (Exception e) {
-				Log.d("Map", e.getStackTrace().toString());
+				Log.d(TAG, e.getStackTrace().toString());
 			}
 		}
 	}

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 <string name="app_name">Bysyklist Oslo</string>
+<string name="initdialog_title">Første oppstart</string>
+<string name="initdialog_message">Henter informasjon om alle sykkelstativene fra ClearChannel</string>
 <string name="rackdialog_title">Om stativet</string>
 <string name="rackdialog_fetching">Henter data om ledige låser og sykler...</string>
 <string name="rackdialog_freebikes">Ledige sykler: %d</string>

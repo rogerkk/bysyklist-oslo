@@ -55,7 +55,7 @@ public class OsloCityBikeAdapter {
         	
         	for (int i = 0; i < elements.getLength(); i++) {
         		Integer rackId = Integer.valueOf(elements.item(i).getFirstChild().getNodeValue());
-        		if (rackId < 500) { // Racks with id over 500 seem to be for testing
+        		if (rackId < 500) { // Racks with id over 500 seem to be for testing purposes
         			rackIds.add(rackId);
         		}
         	}
@@ -243,20 +243,26 @@ public class OsloCityBikeAdapter {
         return sb.toString();
     }
     
-    private class OsloCityBikeException extends Exception {
-    	public OsloCityBikeException(Exception e) {
+    public class OsloCityBikeException extends Exception {
+		private static final long serialVersionUID = -1658595799469140717L;
+
+		public OsloCityBikeException(Exception e) {
     		super(e);
     	}
     }
     
     private class OsloCityBikeCommunicationException extends OsloCityBikeException{
-    	public OsloCityBikeCommunicationException(Exception e) {
+		private static final long serialVersionUID = -4574284801307284546L;
+
+		public OsloCityBikeCommunicationException(Exception e) {
     		super(e);
     	}
     }
 
     private class OsloCityBikeParseException extends OsloCityBikeException {
-    	public OsloCityBikeParseException(Exception e) {
+		private static final long serialVersionUID = -5677634395427608346L;
+
+		public OsloCityBikeParseException(Exception e) {
     		super(e);
     	}
     }
