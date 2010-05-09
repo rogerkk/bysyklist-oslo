@@ -31,6 +31,11 @@ public class Map extends MapActivity {
 	ProgressDialog progressDialog;
 	MyLocationOverlay myLocation;
 	MapController mapController;
+	DbAdapter db;
+	
+	ProgressDialog pd;
+	
+	static final int DIALOG_DBINIT = 0; // Progressbar when initializing the database the first time the app is run.
 	
     /** Called when the activity is first created. */
     @Override
@@ -63,34 +68,50 @@ public class Map extends MapActivity {
 		if (point != null) {
 			mapController.animateTo(point);
 		}
-
+		
+		db = new DbAdapter(Map.this, "racks").open();
+		if (!db.hasRackData()) {
+			pd = ProgressDialog.show(this,
+					"Første oppstart",
+					"Laster ned informasjon om alle stativer.",
+					true, false);
+		}
+			
 		new Thread(new Runnable(){
-        	public void run(){
-        		Looper.prepare();
-        		initializeMap();
-				     
+			public void run() {
+				Looper.prepare();
+
+				if (!db.hasRackData()) {
+					// Show standard location (Overview of Oslo) 
+					mapController.setZoom(13);
+					mapController.setCenter(new GeoPoint((int)(59.914653*1E6), (int) (10.740681*1E6)));
+					
+					// Initialise database
+					OsloCityBikeAdapter osloCityBikeAdapter = new OsloCityBikeAdapter();
+					initializeDB(db, osloCityBikeAdapter);
+					pd.dismiss();
+				}
+				
+        		initializeMap(db);
         		runOnUiThread(new Runnable() {
         			public void run() {
         				setProgressBarIndeterminateVisibility(false);
         			}
         		});
+        		
+			}
+			}).start();
+		
+
+		new Thread(new Runnable(){
+        	public void run(){
+
         	}
         }).start();
         
     }
     
-    private void initializeMap() {
-
-        DbAdapter db = new DbAdapter(this, "racks").open();
-        OsloCityBikeAdapter ocbAdapter = new OsloCityBikeAdapter();
-        
-        if (!db.hasRackData()) {
-        	// Vis 
-        	mapController.setZoom(13);
-        	mapController.setCenter(new GeoPoint((int)(59.914653*1E6), (int) (10.740681*1E6)));
-        	initializeDB(db, ocbAdapter);
-        }
-		
+    private void initializeMap(DbAdapter db) {
         RacksOverlay rackOverlay = populateRackOverlay(db);
 		map.getOverlays().add(rackOverlay);  
 		map.postInvalidate();
@@ -167,6 +188,14 @@ public class Map extends MapActivity {
     	myLocation.disableMyLocation();
     }
     
+//    protected Dialog onCreateDialog(int id) {
+//    	switch (id) {
+//    		case DIALOG_DBINIT:
+//    			
+//    			break;
+//    	}
+//    }
+//    
 
 	/**
 	 * @param db
