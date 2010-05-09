@@ -1,4 +1,4 @@
-package rogerkk.bikefinder;
+package no.rkkc.bysykkel;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -28,10 +28,10 @@ public class DbAdapter {
 	private static String EMPTY_LOCKS = "empty_locks";
 	
 	
-	public DbAdapter(Context context) {
+	public DbAdapter(Context context, String table) {
 		this.context = context;
 		this.queryBuilder = new SQLiteQueryBuilder();
-		this.queryBuilder.setTables("racks");
+		this.queryBuilder.setTables(table);
 	}
 	
 	public DbAdapter open() {

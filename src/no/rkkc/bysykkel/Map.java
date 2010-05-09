@@ -1,16 +1,15 @@
-package rogerkk.bikefinder;
+package no.rkkc.bysykkel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import android.app.AlertDialog;
+import no.rkkc.bysykkel.R;
+
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
-import android.location.Location;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
@@ -44,18 +43,25 @@ public class Map extends MapActivity {
         map = (MapView)findViewById(R.id.map);
         map.setBuiltInZoomControls(true);
         mapController = map.getController();
-        mapController.setZoom(16);
+//        mapController.setCenter(new GeoPoint((int)(59.914653*1E6), (int) (10.740681*1E6)));
+//        mapController.setZoom(13);
 
         setProgressBarIndeterminateVisibility(true);
 
         // create overlay for my position and show it
         myLocation = new MyLocationOverlay(this, map);
-        map.getOverlays().add(myLocation);
         myLocation.enableMyLocation();
+        map.getOverlays().add(myLocation);
+        myLocation.runOnFirstFix(new Runnable() {
+			public void run() {
+				mapController.setZoom(16);
+				animateToMyLocation();
+			}
+        });
     	
-        Location location = myLocation.getLastFix();
-		if (location != null) {
-			mapController.animateTo(new GeoPoint((int) (location.getLatitude()*1E6), (int) (location.getLongitude()*1E6)));
+        GeoPoint point = myLocation.getMyLocation();
+		if (point != null) {
+			mapController.animateTo(point);
 		}
 
 		new Thread(new Runnable(){
@@ -75,10 +81,13 @@ public class Map extends MapActivity {
     
     private void initializeMap() {
 
-        DbAdapter db = new DbAdapter(this).open();
+        DbAdapter db = new DbAdapter(this, "racks").open();
         OsloCityBikeAdapter ocbAdapter = new OsloCityBikeAdapter();
         
         if (!db.hasRackData()) {
+        	// Vis 
+        	mapController.setZoom(13);
+        	mapController.setCenter(new GeoPoint((int)(59.914653*1E6), (int) (10.740681*1E6)));
         	initializeDB(db, ocbAdapter);
         }
 		

@@ -5,10 +5,10 @@
 	<com.google.android.maps.MapView android:id="@+id/map"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
-		android:apiKey="0WQ2K8Xilm-CADK9viFafoJY-qQB2SxxrEP86Kw" 
+		android:apiKey="0WQ2K8Xilm-Cn9W5pC6HORcUVMmYDt-JS5gvZCg" 
 		android:clickable="true"/>
 		<!-- Debug key: 0WQ2K8Xilm-CADK9viFafoJY-qQB2SxxrEP86Kw -->
-		<!-- Prod key:  0WQ2K8Xilm-AA73wT8Ms6NwdUAfVvVJd7FwIoww-->
+		<!-- Prod key:  0WQ2K8Xilm-Cn9W5pC6HORcUVMmYDt-JS5gvZCg-->
 	<LinearLayout android:id="@+id/zoom"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"

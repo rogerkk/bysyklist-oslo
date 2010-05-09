@@ -1,4 +1,4 @@
-package rogerkk.bikefinder;
+package no.rkkc.bysykkel;
 
 import java.io.BufferedReader;
 import java.io.IOException;

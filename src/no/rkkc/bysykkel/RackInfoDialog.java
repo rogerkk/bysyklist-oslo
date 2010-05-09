@@ -1,8 +1,8 @@
-package rogerkk.bikefinder;
+package no.rkkc.bysykkel;
 
+import no.rkkc.bysykkel.R;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;

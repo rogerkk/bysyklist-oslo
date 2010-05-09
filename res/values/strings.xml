@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<string name="app_name">Sykkeldelisk</string>
+<string name="app_name">Bysyklist Oslo</string>
 <string name="rackdialog_title">Om stativet</string>
 <string name="rackdialog_fetching">Henter data om ledige låser og sykler...</string>
 <string name="rackdialog_freebikes">Ledige sykler: %d</string>
