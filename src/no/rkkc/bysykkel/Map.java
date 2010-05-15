@@ -30,6 +30,10 @@ public class Map extends MapActivity {
 	MyLocationOverlay myLocation;
 	MapController mapController;
 	DbAdapter db;
+	OsloCityBikeAdapter osloCityBikeAdapter;
+	
+	GeoPoint savedLocation;
+	int savedZoomLevel;
 	
 	static final int DIALOG_DBINIT = 0; // Progressbar when initializing the database the first time the app is run.
 	static final int DIALOG_COMMUNICATION_ERROR = 1; // Something has failed during communication with servers
@@ -41,92 +45,117 @@ public class Map extends MapActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-        setProgressBarIndeterminateVisibility(true);
+        db = new DbAdapter(Map.this, "racks").open();
+        osloCityBikeAdapter = new OsloCityBikeAdapter();
+
+        if (!isFirstRun()) {
+        	requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        	setProgressBarIndeterminateVisibility(true);
+        }
+        
         setContentView(R.layout.main);
         
         map = (MapView)findViewById(R.id.map);
         map.setBuiltInZoomControls(true);
         mapController = map.getController();
 
-        setupMyLocation();
+        setupMyLocation(savedInstanceState);
     	
-		db = new DbAdapter(Map.this, "racks").open();
-		if (!db.hasRackData()) {
-			showDialog(DIALOG_DBINIT);
-		}
+        if (isFirstRun()) {
+        	setupFirstRun();
+        } else {
+        	initializeMap();
+        	setProgressBarIndeterminateVisibility(false);
+        }
+    }
+
+    /**
+     * Checks if this is the first time the app has been run.
+     * 
+     * @return boolean
+     */
+    private boolean isFirstRun() {
+    	if (!db.hasRackData()) {
+    		return true;
+    	} else {
+    		return false;
+    	}
+    }
+    
+	/**
+	 * Initialize default location + zoom for user interface, and retrieve info on all racks and save in database. 
+	 */
+	private void setupFirstRun() {
+		showDialog(DIALOG_DBINIT);
 			
 		new Thread(new Runnable(){
 			public void run() {
 				Looper.prepare();
 
-				if (!db.hasRackData()) {
-					// Show standard location (Overview of Oslo) 
-					mapController.setZoom(13);
-					mapController.setCenter(new GeoPoint((int)(59.914653*1E6), (int) (10.740681*1E6)));
+				// Show standard location (Overview of Oslo) 
+				mapController.setZoom(13);
+				mapController.setCenter(new GeoPoint((int)(59.914653*1E6), (int) (10.740681*1E6)));
 					
-					initializeDb(db);
-					dismissDialog(DIALOG_DBINIT);
-				}
+				initializeDb(db);
+				dismissDialog(DIALOG_DBINIT);
 				
-        		initializeMap(db);
-        		runOnUiThread(new Runnable() {
-        			public void run() {
-        				setProgressBarIndeterminateVisibility(false);
-        			}
-        		});
-        		
+        		initializeMap();
 			}
 			}).start();
-    }
+	}
 
 	/**
 	 * 
 	 */
-	private void setupMyLocation() {
+	private void setupMyLocation(Bundle savedInstanceState) {
 		myLocation = new MyLocationOverlay(this, map);
-        myLocation.enableMyLocation();
-        myLocation.runOnFirstFix(new Runnable() {
-			public void run() {
-				mapController.setZoom(16);
-				animateToMyLocation();
+		myLocation.enableMyLocation();
+		map.getOverlays().add(myLocation);
+
+		if (savedInstanceState != null) {
+			GeoPoint point = new GeoPoint((int)savedInstanceState.getFloat("Latitude"), (int)savedInstanceState.getFloat("Longitude"));
+			mapController.setZoom(savedInstanceState.getInt("ZoomLevel"));
+			mapController.setCenter(point);
+		} else {
+	        GeoPoint recentLocation = myLocation.getMyLocation();
+			if (recentLocation != null) {
+				mapController.animateTo(recentLocation);
 			}
-        });
-        map.getOverlays().add(myLocation);
-        
-        GeoPoint point = myLocation.getMyLocation();
-		if (point != null) {
-			mapController.animateTo(point);
+	        myLocation.runOnFirstFix(new Runnable() {
+				public void run() {
+					mapController.setZoom(16);
+					animateToMyLocation();
+				}
+	        });
 		}
 	}
     
-    private void initializeMap(DbAdapter db) {
-        RacksOverlay rackOverlay = populateRackOverlay(db);
+	/**
+	 * Set up the map with all the overlays representing bike racks
+	 */
+    private void initializeMap() {
+        RacksOverlay rackOverlay = populateRackOverlay();
 		map.getOverlays().add(rackOverlay);  
 		map.postInvalidate();
 		db.close();
     }
 
 	/**
-	 * @param db
-	 * @return
+	 * Append all racks as pins on the overlay
+	 * 
+	 * @return {@link RacksOverlay}	An overlay populated with pins representing bike racks
 	 */
-	private RacksOverlay populateRackOverlay(DbAdapter db) {
+	private RacksOverlay populateRackOverlay() {
 		RacksOverlay rackOverlay = initializeRackOverlay();
         
         // Get racks from database and add to overlay
 		Rack rack;
 		ArrayList<Integer> rackIds = db.getRackIds();
 		for (Integer rackId : rackIds) {
-			Log.d(TAG, "Adding rack to overlay. ID: ".concat(rackId.toString()));
-			
-			Log.d(TAG, "Getting rack from DB ".concat(Integer.toString(rackId)));
+			Log.v(TAG, "Adding rack to overlay. ID: ".concat(rackId.toString()));
 			rack = db.getRack(rackId);
-			Log.d(TAG, "Retrieved rack from DB");
 			if (rack.hasLocationInfo()) {
-				Log.d(TAG, "Creating overlay item");
 				OverlayItem item = new OverlayItem(rack.getLocation(), rack.getDescription(), "1");
-				Log.d(TAG, "Adding rack to overlay");
 				rackOverlay.addItem(item, rack.getId());
 			}
 		}
@@ -134,7 +163,9 @@ public class Map extends MapActivity {
 	}
 
 	/**
-	 * @return
+	 * Initial setup of the overlay, defining the pin. 
+	 * 
+	 * @return {@link RacksOverlay}
 	 */
 	private RacksOverlay initializeRackOverlay() {
 		Drawable icon = getResources().getDrawable(R.drawable.bubble);
@@ -151,33 +182,56 @@ public class Map extends MapActivity {
 	 * @param ocbAdapter
 	 */
 	private void initializeDb(DbAdapter db) {
-		OsloCityBikeAdapter osloCityBikeAdapter = new OsloCityBikeAdapter();
 		ArrayList<Integer> rackIds = new ArrayList<Integer>();
 		try {
 			rackIds = osloCityBikeAdapter.getRacks();
-			addRacksToDb(db, osloCityBikeAdapter, rackIds);
+			addRacksToDb(rackIds);
 		} catch (OsloCityBikeException e) {
 			Log.e("FetchRackData", "Communication with ClearChannel failed.", e);
 			// TODO: Show error dialog to user?		
 		}
 	}
     
+	@Override
     protected void onStart() {
     	super.onStart();
-    	myLocation.enableMyLocation();
-    	animateToMyLocation();
     }
     
+    @Override
     protected void onResume() {
     	super.onResume();
-    	animateToMyLocation();
+    	myLocation.enableMyLocation();
+//    	animateToMyLocation();
     }
     
-    protected void onStop() {
-    	super.onStop();
+    @Override
+    protected void onPause() {
+    	super.onPause();
+    	savedLocation = map.getMapCenter();
+    	savedZoomLevel = map.getZoomLevel();
     	myLocation.disableMyLocation();
     }
     
+    @Override
+    protected void onStop() {
+    	super.onStop();
+    }
+    
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+    	savedInstanceState.putInt("ZoomLevel",  map.getZoomLevel());
+    	savedInstanceState.putFloat("Latitude", map.getMapCenter().getLatitudeE6());
+    	savedInstanceState.putFloat("Longitude", map.getMapCenter().getLongitudeE6());
+    	
+    	super.onSaveInstanceState(savedInstanceState);
+    }
+    
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+    	super.onRestoreInstanceState(savedInstanceState);
+    }
+    
+    @Override
     protected Dialog onCreateDialog(int id) {
     	switch (id) {
     		case DIALOG_DBINIT:
@@ -206,18 +260,21 @@ public class Map extends MapActivity {
 	 * @param db
 	 * @param ocbAdapter
 	 * @param rackIds
+	 * @throws Exception 
 	 */
-	private void addRacksToDb(DbAdapter db, OsloCityBikeAdapter ocbAdapter,
-			ArrayList<Integer> rackIds) {
+	private void addRacksToDb(ArrayList<Integer> rackIds) throws OsloCityBikeException {
 		// Add racks to database
 		for (Integer rackId : rackIds) {
 			Rack rack;
 			try {
-				Log.d(TAG, "Inserting rack into DB. ID: ".concat(rackId.toString()));
-				rack = ocbAdapter.getRack(rackId);
+				Log.v(TAG, "Inserting rack into DB. ID: ".concat(rackId.toString()));
+				rack = osloCityBikeAdapter.getRack(rackId);
 				db.insertRack(rack);
-			} catch (Exception e) {
-				Log.d(TAG, e.getStackTrace().toString());
+			} catch (OsloCityBikeException e) {
+				Log.e(TAG, e.getStackTrace().toString());
+				db.clearRacks(); // Remove rack data from database, so db-initialization is retried on next startup.
+				// TODO: Show a dialog informing the user of the error in stead of rethrowing?
+				throw e;
 			}
 		}
 	}
@@ -258,7 +315,6 @@ public class Map extends MapActivity {
 		private Drawable marker=null;
 		private List<OverlayItem> items = new ArrayList<OverlayItem>();
 		private HashMap<Integer,Integer> overlayToRackMapping = new HashMap<Integer, Integer>();
-		private int mSize;
 		
 		public RacksOverlay(Drawable marker) {
 			super(marker);
