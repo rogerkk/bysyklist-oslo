@@ -138,33 +138,10 @@ public class Map extends MapActivity {
 	 * Set up the map with all the overlays representing bike racks
 	 */
     private void initializeMap() {
-        RacksOverlay rackOverlay = populateRackOverlay();
+        RacksOverlay rackOverlay = initializeRackOverlay(db.getRacks());
 		map.getOverlays().add(rackOverlay);  
 		map.postInvalidate();
     }
-
-	/**
-	 * Append all racks as pins on the overlay
-	 * 
-	 * @return {@link RacksOverlay}	An overlay populated with pins representing bike racks
-	 */
-	private RacksOverlay populateRackOverlay() {
-		
-		RacksOverlay rackOverlay = initializeRackOverlay(db.getRacks());
-        
-//        // Get racks from database and add to overlay
-//		ArrayList<Integer> rackIds = db.getRackIds();
-//		Rack rack;
-//		for (Integer rackId : rackIds) {
-//			Log.v(TAG, "Adding rack to overlay. ID: ".concat(rackId.toString()));
-//			rack = db.getRack(rackId);
-//			if (rack.hasLocationInfo()) {
-//				OverlayItem item = new OverlayItem(rack.getLocation(), rack.getDescription(), "1");
-//				rackOverlay.addItem(item, rack.getId());
-//			}
-//		}
-		return rackOverlay;
-	}
 
 	/**
 	 * Initial setup of the overlay, defining the pin. 
