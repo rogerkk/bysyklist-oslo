@@ -44,6 +44,12 @@ public class DbAdapter {
 		dbHelper.close();
 	}
 	
+	/*
+	 **********************************************************************************************
+	 * Rack methods                                                                               *
+	 **********************************************************************************************
+	 */
+	
 	public void insertRack(Rack rack) {
 		ContentValues cv = new ContentValues();
 		cv.put(DbAdapter.ID, rack.getId());
@@ -60,7 +66,7 @@ public class DbAdapter {
 		db.insert(DbAdapter.RACK_TABLE, null, cv);
 	}
 	
-	public void clear() {
+	public void clearRacks() {
 		db.delete(DbAdapter.RACK_TABLE, null, null);
 	}
 	
@@ -97,6 +103,17 @@ public class DbAdapter {
 		return rackIds;
 	}
 	
+	public ArrayList<Rack> getRacks() {
+		ArrayList<Integer> rackIds = getRackIds();
+		ArrayList<Rack> racks = new ArrayList<Rack>();
+		
+		for (int id: rackIds) {
+			racks.add(getRack(id));
+		}
+		
+		return racks;
+	}
+	
 	public boolean hasRackData() {
 		Cursor c = db.rawQuery("SELECT count(id) from ".concat(DbAdapter.RACK_TABLE), null);
 		c.moveToFirst();
@@ -127,12 +144,19 @@ public class DbAdapter {
 						"description TEXT, " +
 						"longitude INTEGER, " + // 1E6
 						"latitude INTEGER)");	 // 1E6
+			
+//			db.execSQL("CREATE TABLE app_state " +
+//						"(key TEXT PRIMARY KEY, " +
+//						"value TEXT)");
 		}
 	
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			// TODO Auto-generated method stub
-	
+//			if (oldVersion <= 2) {
+//				db.execSQL("CREATE TABLE app_state " +
+//						"key PRIMARY KEY, " +
+//						"value TEXT");
+//			}
 		}
 	}
 }

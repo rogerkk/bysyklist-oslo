@@ -45,7 +45,7 @@ public class Rack {
 		return (emptyLocks == null) ? false : true;
 	}
 	
-	public int getNumberOfEmptyLocks() {
+	public int getNumberOfEmptySlots() {
 		return emptyLocks;
 	}
 	
@@ -71,6 +71,10 @@ public class Rack {
 	
 	public GeoPoint getLocation() {
 		return location;
+	}
+	
+	public String toString() {
+		return getDescription();
 	}
 	
 }

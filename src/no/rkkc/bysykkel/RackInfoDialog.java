@@ -1,6 +1,5 @@
 package no.rkkc.bysykkel;
 
-import no.rkkc.bysykkel.R;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Handler;
@@ -25,9 +24,9 @@ public class RackInfoDialog extends Dialog implements OnClickListener {
 			if (msg.arg1 >= 0 && msg.arg2 >=0) {
 				String strFreeBikes = getContext().getString(R.string.rackdialog_freebikes);
 				strFreeBikes = String.format(strFreeBikes, msg.arg1);
-				String strFreeLocks = getContext().getString(R.string.rackdialog_freelocks);
-				strFreeLocks = String.format(strFreeLocks, msg.arg2);
-				infoText.setText(strFreeBikes.concat("\n").concat(strFreeLocks));
+				String strFreeSlots = getContext().getString(R.string.rackdialog_freeslots);
+				strFreeSlots = String.format(strFreeSlots, msg.arg2);
+				infoText.setText(strFreeBikes.concat("\n").concat(strFreeSlots));
 			} else { // Probably msg.arg1 == -1 - Indicates no contact
 				infoText.setText(getContext().getString(R.string.rackdialog_not_online));
 			}
@@ -63,7 +62,7 @@ public class RackInfoDialog extends Dialog implements OnClickListener {
 					Rack rack = ocbAdapter.getRack(rackId);
 					if (rack.isOnline()) {
 						msg.arg1 = rack.getNumberOfReadyBikes();
-						msg.arg2 = rack.getNumberOfEmptyLocks();
+						msg.arg2 = rack.getNumberOfEmptySlots();
 					} else {
 						msg.arg1 = -1; // Implies that rack is offline
 					}
