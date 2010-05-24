@@ -113,25 +113,26 @@ public class OsloCityBikeAdapter {
 		return rack;
     }
     
+    /** 
+     * Retrieve rack info XML from ClearChannel and extract relevant info.
+     * 
+     * We expect an XML on the following format:
+     * 
+     * <?xml version="1.0" encoding="utf-8"?>
+     * <string xmlns="http://smartbikeportal.clearchannel.no/public/mobapp/">
+     *         <station>
+     *             <online>1</online>
+     *             <ready_bikes>1</ready_bikes>
+     *             <empty_locks>17</empty_locks>
+     *             <description>02-Middelthunsgate 28 (utenfor Frognerbadet)</description>
+     *             <longitute>10.708515644073486</longitute>
+     *            <latitude>59.92805479800621</latitude>
+     *        </station>
+     * </string>
+     **/
     private HashMap<String, String> getRackInfo(int id) throws OsloCityBikeException {
         String wsMethod = "getRack?id=".concat(String.valueOf(id));
         
-        /* Get rack info XML.
-         * 
-         * We expect an XML on the following format:
-         * 
-         * <?xml version="1.0" encoding="utf-8"?>
-         * <string xmlns="http://smartbikeportal.clearchannel.no/public/mobapp/">
-         *         <station>
-         *             <online>1</online>
-         *             <ready_bikes>1</ready_bikes>
-         *             <empty_locks>17</empty_locks>
-         *             <description>02-Middelthunsgate 28 (utenfor Frognerbadet)</description>
-         *             <longitute>10.708515644073486</longitute>
-         *            <latitude>59.92805479800621</latitude>
-         *        </station>
-         * </string>
-         */
         
         String xml;
         try {
