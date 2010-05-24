@@ -2,9 +2,10 @@ package no.rkkc.bysykkel;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.NoSuchElementException;
 
+import no.rkkc.bysykkel.Constants.FindRackCriteria;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -12,12 +13,15 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Window;
+import android.widget.Toast;
 
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.ItemizedOverlay;
@@ -43,6 +47,14 @@ public class Map extends MapActivity {
 	static final int DIALOG_COMMUNICATION_ERROR = 3; // Something has failed during communication with servers
 	
 	private static final String TAG = "Bysyklist";
+	
+	Handler toastHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			Toast.makeText(getBaseContext(), msg.getData().getString("text"), msg.getData().getInt("time")).show();
+		}
+	};
+	
 	
     /** Called when the activity is first created. */
     @Override
@@ -135,7 +147,7 @@ public class Map extends MapActivity {
 	}
     
 	/**
-	 * Set up the map with all the overlays representing bike racks
+	 * Set up the map with the overlay containing the bike rack represantions
 	 */
     private void initializeMap() {
         RacksOverlay rackOverlay = initializeRackOverlay(db.getRacks());
@@ -173,6 +185,12 @@ public class Map extends MapActivity {
 		}
 	}
     
+    @Override
+    protected void onRestart() {
+    	super.onRestart();
+    	db.open();
+    }
+	
 	@Override
     protected void onStart() {
     	super.onStart();
@@ -226,7 +244,6 @@ public class Map extends MapActivity {
     			return initDialog;
     		case DIALOG_SEARCHING_BIKE:
     			ProgressDialog bikeSearchDialog = new ProgressDialog(this);
-    			bikeSearchDialog.setTitle(getString(R.string.searchdialog_title));
     			String message = String.format(getString(R.string.searchdialog_message_first), 
     					getString(R.string.word_bike));
     			bikeSearchDialog.setMessage(message);
@@ -236,7 +253,6 @@ public class Map extends MapActivity {
     			return bikeSearchDialog;
     		case DIALOG_SEARCHING_SLOT:
     			ProgressDialog slotSearchDialog = new ProgressDialog(this);
-    			slotSearchDialog.setTitle(getString(R.string.searchdialog_title));
     			String slotMessage = String.format(getString(R.string.searchdialog_message_first), 
     					getString(R.string.word_slot));
     			slotSearchDialog.setMessage(slotMessage);
@@ -301,38 +317,10 @@ public class Map extends MapActivity {
 		    	animateToMyLocation();
 		        return true;
 		    case R.id.nearest_bike:
-				showDialog(DIALOG_SEARCHING_BIKE);
-				
-				new Thread(new Runnable(){
-					public void run() {
-						Rack nearestRackWithReadyBike = findClosestRack(FindRackCriteria.ReadyBike);
-	
-						dismissDialog(DIALOG_SEARCHING_BIKE);
-	
-						if (nearestRackWithReadyBike != null) {
-							mapController.animateTo(nearestRackWithReadyBike.getLocation());
-						} else {
-							// TODO: Handle case where no rack was returned.
-						}
-					}
-					}).start();
+		    	searchForClosestRack(FindRackCriteria.ReadyBike);
 				return true;
 		    case R.id.nearest_slot:
-				showDialog(DIALOG_SEARCHING_SLOT);
-				
-				new Thread(new Runnable(){
-					public void run() {
-						Rack nearestRackWithReadyBike = findClosestRack(FindRackCriteria.FreeSlot);
-	
-						dismissDialog(DIALOG_SEARCHING_SLOT);
-	
-						if (nearestRackWithReadyBike != null) {
-							mapController.animateTo(nearestRackWithReadyBike.getLocation());
-						} else {
-							// TODO: Handle case where no rack was returned.
-						}
-					}
-					}).start();
+		    	searchForClosestRack(FindRackCriteria.FreeSlot);
 				return true;
 	    }
 	    return false;
@@ -348,18 +336,106 @@ public class Map extends MapActivity {
 		}
 	}
 	
-	static enum FindRackCriteria {
-		ReadyBike, FreeSlot
+	/**
+	 * Retrieves the closest rack according to criteria and modifies UI accordingly
+	 * 
+	 * @param criteria
+	 */
+	public void searchForClosestRack(final FindRackCriteria criteria) {
+		
+		final Handler mDialogHandler = new Handler() {
+			@Override
+			public void handleMessage(Message msg) {
+				final int dialog;
+				if (criteria == FindRackCriteria.FreeSlot) {
+					dialog = DIALOG_SEARCHING_SLOT;
+				} else {
+					dialog = DIALOG_SEARCHING_BIKE;
+				}
+				
+				if (msg.getData().getBoolean("show")) {
+					showDialog(dialog);
+				} else {
+					dismissDialog(dialog);
+				}
+			}
+		};
+		
+		new Thread(new Runnable(){
+			public void run() {
+				Looper.prepare();
+				
+				// Show progress dialog
+				Message msg = mDialogHandler.obtainMessage();
+				Bundle bundle = new Bundle();
+				bundle.putBoolean("show", true);
+				msg.setData(bundle);
+				mDialogHandler.sendMessage(msg);
+				
+				Rack nearestRackWithReadySlot = findClosestRack(criteria);
+				
+				// Hide progress dialog
+				msg = mDialogHandler.obtainMessage();
+				bundle = new Bundle();
+				bundle.putBoolean("hide", true);
+				msg.setData(bundle);
+				mDialogHandler.sendMessage(msg);
+				
+				if (nearestRackWithReadySlot == null) {
+					Log.w(Map.TAG, "Could not find nearest rack during search");
+					
+					// Show toast informing of the error
+					msg = toastHandler.obtainMessage();
+					bundle = new Bundle();
+					bundle.putString("text", getText(R.string.error_search_failed).toString());
+					bundle.putInt("time", Toast.LENGTH_SHORT);
+					msg.setData(bundle);
+					toastHandler.sendMessage(msg);
+					
+					return;
+				}
+
+				RacksOverlay overlay = ((RacksOverlay) map.getOverlays().get(1));
+				int overlayIndex = overlay.findOverlayIndex(nearestRackWithReadySlot.getId());
+				
+				Drawable marker_normal = getResources().getDrawable(R.drawable.bubble);
+				marker_normal.setBounds(-marker_normal.getIntrinsicWidth()/2, 
+						-marker_normal.getIntrinsicHeight(), 
+						marker_normal.getIntrinsicWidth()/2, 0);
+				Drawable marker_highlighted = getResources().getDrawable(R.drawable.bubble_highlighted);
+				marker_highlighted.setBounds(-marker_highlighted.getIntrinsicWidth()/2, 
+						-marker_highlighted.getIntrinsicHeight(), 
+						marker_highlighted.getIntrinsicWidth()/2, 0);
+				
+				overlay.getItem(overlayIndex).setMarker(marker_highlighted);
+			
+				mapController.animateTo(nearestRackWithReadySlot.getLocation());
+
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					// Don't do anything. The finally-clause will revert to previous state anyway.
+				} finally {
+					overlay.getItem(overlayIndex).setMarker(marker_normal);
+					map.postInvalidate();
+				}
+				Looper.loop();
+			}
+			}).start();		
 	}
 	
 	public Rack findClosestRack(FindRackCriteria criteria) {
-		// FIXME do we want to provide closest station from currently centered, or perhaps from a longpress?
+		// TODO: Do we want to provide closest station from currently centered, or perhaps from a longpress?
 		
-		// TODO: Handle case where no fix can be retrieved. getLastFix() will return null and result in a NullPointerException further down
-		Location center = myLocation.getLastFix();  
-
+		Location center = myLocation.getLastFix(); 
+		if (center == null) {
+			// No location has been set.
+			return null;
+		}
+		
 		List<LocationAndDistance> sortedStationLocations = new ArrayList<LocationAndDistance>();
 		for (Rack rack : db.getRacks()) {
+			Log.v(Map.TAG, rack.toString());
 			Location loc = new Location("Bysyklist");
 			loc.setLatitude(rack.getLocation().getLatitudeE6() / 1E6);
 			loc.setLongitude(rack.getLocation().getLongitudeE6() / 1E6);
@@ -369,34 +445,27 @@ public class Map extends MapActivity {
 
 		// Find first matching station
 		Rack foundRack = null;
+		Rack rack = null;
 		for (LocationAndDistance lad : sortedStationLocations) {
 			try {
-				Rack rack = osloCityBikeAdapter.getRack(lad.getStationIndex());
+				rack = osloCityBikeAdapter.getRack(lad.getStationIndex());
 				if ((criteria == FindRackCriteria.ReadyBike && rack.getNumberOfReadyBikes() > 0)
 						|| (criteria == FindRackCriteria.FreeSlot && 
 								rack.getNumberOfEmptySlots() > 0)) {
 					foundRack = rack;
-                    Log.v(this.TAG, "Found station:" + foundRack);
+                    Log.v(Map.TAG, "Found station:" + foundRack);
 					break;
 				}
-			} catch (Exception e) {
-				// FIXME find a way to display the fact that some nearer
-				// stations don't
-				// have status information available
+			} catch (OsloCityBikeException e) {
+				// TODO: find a way to display the fact that some nearer
+				// stations don't have status information available
+				Log.w(Map.TAG, "Didn't get info on number of ready bikes and free locks");
+				Log.w(Map.TAG, e.toString());
 				continue;
 			}
 		}
-
-		if (foundRack != null) {
-//			RacksOverlay overlay = ((RacksOverlay) map
-//					.getOverlays().get(0));
-//			String prefix = criteria == FindRackCriteria.ReadyBike ? "station with closest bike:\n"
-//					: "station with closest free slot:\n";
-
-			return foundRack;
-		}
 		
-		return null;
+		return foundRack;
 	}
 	
 	private static class LocationAndDistance implements Comparable<LocationAndDistance> {
@@ -462,14 +531,32 @@ public class Map extends MapActivity {
 		}
 		
 		private Rack findRack(int overlayIndex) {
-			for (int i = 0; i < racks.size()-1; i++) {
-				Rack rack = racks.get(i);
-				if (rack.getId() ==  Integer.parseInt(items.get(overlayIndex).getSnippet())) {
+			Rack rack = null;
+			for (int i = 0; i < racks.size(); i++) {
+				rack = racks.get(i);
+				int rackId = rack.getId();
+				int overlayIndexRackId = Integer.parseInt(items.get(overlayIndex).getSnippet());
+				
+				if (rackId == overlayIndexRackId) {
 					return rack;
 				}
 			}
-			throw new IllegalArgumentException("Overlay with index " + overlayIndex
+			
+			// TODO: Properly handle this exception by giving some user feedback
+			throw new NoSuchElementException("Overlay with index " + overlayIndex
 					+ " doesn't exists as rack");
+		}
+		
+		private int findOverlayIndex(int rackId) {
+			for (int i = 0; i < this.size(); i++) {
+				if (rackId == Integer.parseInt(items.get(i).getSnippet())) {
+					return i;
+				}
+			}
+			
+			// TODO: Properly handle this exception by giving some user feedback
+			throw new NoSuchElementException("Overlay with rack " + rackId
+					+ " doesn't exists");
 		}
 	}
 }
