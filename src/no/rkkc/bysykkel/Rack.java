@@ -74,7 +74,7 @@ public class Rack {
 	}
 	
 	public String toString() {
-		return getDescription();
+		return getId()+": "+getDescription();
 	}
 	
 }
