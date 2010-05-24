@@ -126,18 +126,26 @@ public class Map extends MapActivity {
 			public void run() {
 				Looper.prepare();
 
-				// Show standard location (Overview of Oslo) 
-				mapController.setZoom(13);
-				mapController.setCenter(new GeoPoint((int)(59.914653*1E6), (int) (10.740681*1E6)));
+				showOsloOverview();
 					
 				initializeDb(db);
 				dismissDialog(DIALOG_DBINIT);
 				
         		initializeMap();
 			}
+
 			}).start();
 	}
 
+	/**
+	 * Display overview of Oslo. Used when no fix before GPS/GSM has been acquired.
+	 */
+	private void showOsloOverview() {
+		// Show standard location (Overview of Oslo) 
+		mapController.setZoom(13);
+		mapController.setCenter(new GeoPoint((int)(59.924653*1E6), (int) (10.731071*1E6)));
+	}
+	
 	/**
 	 * 
 	 */
@@ -154,6 +162,8 @@ public class Map extends MapActivity {
 	        GeoPoint recentLocation = myLocation.getMyLocation();
 			if (recentLocation != null) {
 				mapController.animateTo(recentLocation);
+			} else {
+				showOsloOverview();
 			}
 	        myLocation.runOnFirstFix(new Runnable() {
 				public void run() {
