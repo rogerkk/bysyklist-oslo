@@ -46,7 +46,7 @@ public class Map extends MapActivity {
 	static final int DIALOG_SEARCHING_SLOT = 2; // Progressbar when searching for free slots
 	static final int DIALOG_COMMUNICATION_ERROR = 3; // Something has failed during communication with servers
 	
-	private static final String TAG = "Bysyklist";
+	private static final String TAG = "Bysyklist-Map";
 	
 	Handler toastHandler = new Handler() {
 		@Override
@@ -291,7 +291,7 @@ public class Map extends MapActivity {
 				db.insertRack(rack);
 			} catch (OsloCityBikeException e) {
 				Log.e(TAG, e.getStackTrace().toString());
-				db.clearRacks(); // Remove rack data from database, so db-initialization is retried on next startup.
+				db.clearRacks(); // Remove rack data from database, so that db-initialization is retried on next startup.
 				// TODO: Show a dialog informing the user of the error in stead of rethrowing?
 				throw e;
 			}
@@ -316,12 +316,12 @@ public class Map extends MapActivity {
 		    case R.id.my_location:
 		    	animateToMyLocation();
 		        return true;
-		    case R.id.nearest_bike:
+		    /*case R.id.nearest_bike:
 		    	searchForClosestRack(FindRackCriteria.ReadyBike);
 				return true;
 		    case R.id.nearest_slot:
 		    	searchForClosestRack(FindRackCriteria.FreeSlot);
-				return true;
+				return true;*/
 	    }
 	    return false;
 	}
@@ -457,10 +457,9 @@ public class Map extends MapActivity {
 					break;
 				}
 			} catch (OsloCityBikeException e) {
-				// TODO: find a way to display the fact that some nearer
-				// stations don't have status information available
+				// TODO: find a way to display the fact that some nearer stations don't have status information available
 				Log.w(Map.TAG, "Didn't get info on number of ready bikes and free locks");
-				Log.w(Map.TAG, e.toString());
+				Log.w(Map.TAG, e.getStackTrace().toString());
 				continue;
 			}
 		}
@@ -505,9 +504,10 @@ public class Map extends MapActivity {
 		@Override
 		protected OverlayItem createItem(int i) {
 			Rack rack = racks.get(i);
-			Log.v("Test", "Adding rack "+rack.getId());
-				OverlayItem item = new OverlayItem(rack.getLocation(), rack.getDescription(), Integer.toString(rack.getId()));
+			Log.v(Map.TAG, "Adding rack "+rack.getId() + " to overlay");
+			OverlayItem item = new OverlayItem(rack.getLocation(), rack.getDescription(), Integer.toString(rack.getId()));
 			items.add(item);
+
 			return item;
 		}
 
@@ -542,7 +542,7 @@ public class Map extends MapActivity {
 				}
 			}
 			
-			// TODO: Properly handle this exception by giving some user feedback
+			// This should never occur
 			throw new NoSuchElementException("Overlay with index " + overlayIndex
 					+ " doesn't exists as rack");
 		}
@@ -554,7 +554,7 @@ public class Map extends MapActivity {
 				}
 			}
 			
-			// TODO: Properly handle this exception by giving some user feedback
+			// This should never occur
 			throw new NoSuchElementException("Overlay with rack " + rackId
 					+ " doesn't exists");
 		}

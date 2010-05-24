@@ -1,6 +1,5 @@
 package no.rkkc.bysykkel;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 import android.content.ContentValues;

@@ -1,9 +1,12 @@
 package no.rkkc.bysykkel;
 
+import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import android.app.Dialog;
 import android.content.Context;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -15,20 +18,25 @@ public class RackInfoDialog extends Dialog implements OnClickListener {
 	TextView infoText;
 	Button dismissButton;
 	
+	private static final String TAG = "Bysyklist-RackInfoDialog";
+	
 	// Handler for updating information in dialog
 	Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
-			TextView infoText = (TextView)findViewById(R.id.info);
+			TextView mInfoText = (TextView)findViewById(R.id.info);
+			Bundle mData = msg.getData();
 			
-			if (msg.arg1 >= 0 && msg.arg2 >=0) {
+			if (mData.getBoolean("online")) {
 				String strFreeBikes = getContext().getString(R.string.rackdialog_freebikes);
-				strFreeBikes = String.format(strFreeBikes, msg.arg1);
+				strFreeBikes = String.format(strFreeBikes, mData.getInt("bikes"));
 				String strFreeSlots = getContext().getString(R.string.rackdialog_freeslots);
-				strFreeSlots = String.format(strFreeSlots, msg.arg2);
-				infoText.setText(strFreeBikes.concat("\n").concat(strFreeSlots));
-			} else { // Probably msg.arg1 == -1 - Indicates no contact
-				infoText.setText(getContext().getString(R.string.rackdialog_not_online));
+				strFreeSlots = String.format(strFreeSlots, mData.getInt("slots"));
+				mInfoText.setText(strFreeBikes.concat("\n").concat(strFreeSlots));
+			} else if (mData.getBoolean("error")) {
+				mInfoText.setText(getContext().getString(R.string.error_communication_failed));
+			} else {
+				mInfoText.setText(getContext().getString(R.string.rackdialog_not_online));
 			}
 		}
 	};
@@ -50,25 +58,27 @@ public class RackInfoDialog extends Dialog implements OnClickListener {
 		dismissButton = (Button)findViewById(R.id.dismiss);
 		dismissButton.setText(R.string.rackdialog_dismiss);
 		dismissButton.setOnClickListener(this);
-		
 
 		Thread background = new Thread(new Runnable() {
 			public void run() {
-				// TODO: Run in background thread
 				OsloCityBikeAdapter ocbAdapter= new OsloCityBikeAdapter();
 				Message msg = Message.obtain();
+				Bundle bundle = new Bundle();
 				
 				try {
 					Rack rack = ocbAdapter.getRack(rackId);
 					if (rack.isOnline()) {
-						msg.arg1 = rack.getNumberOfReadyBikes();
-						msg.arg2 = rack.getNumberOfEmptySlots();
+						bundle.putInt("bikes", rack.getNumberOfReadyBikes());
+						bundle.putInt("slots", rack.getNumberOfEmptySlots());
+						bundle.putBoolean("online", true);
 					} else {
-						msg.arg1 = -1; // Implies that rack is offline
+						bundle.putBoolean("online", false);
 					}
-				} catch (Exception e) {
-					msg.arg1 = -1; // TODO: Return different error code when communication with entire ClearChannel system failed
+				} catch (OsloCityBikeException e) {
+					Log.w(TAG, "Communication with ClearChannel failed");
+					bundle.putBoolean("error", true);
 				} finally {
+					msg.setData(bundle);
 					handler.sendMessage(msg);
 				}
 			}
