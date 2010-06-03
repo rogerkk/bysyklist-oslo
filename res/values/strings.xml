@@ -8,7 +8,7 @@
 	<string name="word_slots">låser</string>
 	
 	<string name="initdialog_title">Første oppstart</string>
-	<string name="initdialog_message">Henter informasjon om alle sykkelstativene fra ClearChannel</string>
+	<string name="initdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
 	
 	<string name="searchdialog_title">Søker</string>
 	<string name="searchdialog_message_first">Søker etter ledig %s</string>
