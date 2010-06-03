@@ -1,23 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<string name="app_name">Bysyklist Oslo</string>
-<string name="word_bike">sykkel</string>
-<string name="word_slot">lås</string>
-<string name="initdialog_title">Første oppstart</string>
-<string name="initdialog_message">Henter informasjon om alle sykkelstativene fra ClearChannel</string>
-<string name="searchdialog_title">Søker</string>
-<string name="searchdialog_message_first">Søker etter ledig %s</string>
-<string name="rackdialog_title">Om stativet</string>
-<string name="rackdialog_fetching">Henter data om ledige låser og sykler...</string>
-<string name="rackdialog_freebikes">Ledige sykler: %d</string>
-<string name="rackdialog_freeslots">Ledige låser: %d</string>
-<string name="rackdialog_not_online">Ingen kontakt med stativet.</string>
-<string name="rackdialog_dismiss">OK</string>
-<string name="menu_my_location">Min posisjon</string>
-<string name="menu_nearest_bike">Nærmeste sykkel</string>
-<string name="menu_nearest_slot">Nærmeste lås</string>
-
-<string name="error_search_failed">En feil oppsto under søket.</string>
-<string name="error_communication_failed">Feil under kommunikasjon med ClearChannel.</string>
-
+	<string name="app_name">Bysyklist Oslo</string>
+	
+	<string name="word_bike">sykkel</string>
+    <string name="word_bikes">sykler</string>
+    <string name="word_slot">lås</string>
+	<string name="word_slots">låser</string>
+	
+	<string name="initdialog_title">Første oppstart</string>
+	<string name="initdialog_message">Henter informasjon om alle sykkelstativene fra ClearChannel</string>
+	
+	<string name="searchdialog_title">Søker</string>
+	<string name="searchdialog_message_first">Søker etter ledig %s</string>
+	
+	<string name="rackdialog_title">Om stativet</string>
+	<string name="rackdialog_fetching">Henter data om ledige låser og sykler...</string>
+	<string name="rackdialog_freebikes">Ledige sykler: %d</string>
+	<string name="rackdialog_freeslots">Ledige låser: %d</string>
+	<string name="rackdialog_not_online">Ingen kontakt med stativet.</string>
+	<string name="rackdialog_dismiss">OK</string>
+	
+	<string name="menu_my_location">Min posisjon</string>
+	<string name="menu_nearest_bike">Nærmeste sykkel</string>
+	<string name="menu_nearest_slot">Nærmeste lås</string>
+	<string name="menu_favorites">Favoritter</string>
+	
+	<string name="error_search_failed">En feil oppsto under søket.</string>
+	<string name="error_communication_failed">Feil under kommunikasjon med ClearChannel.</string>
 </resources>

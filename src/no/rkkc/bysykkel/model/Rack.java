@@ -16,7 +16,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package no.rkkc.bysykkel;
+package no.rkkc.bysykkel.model;
 
 import com.google.android.maps.GeoPoint;
 

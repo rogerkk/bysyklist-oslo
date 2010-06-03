@@ -19,6 +19,7 @@
 package no.rkkc.bysykkel;
 
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
+import no.rkkc.bysykkel.model.Rack;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;

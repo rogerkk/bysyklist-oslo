@@ -16,17 +16,24 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package no.rkkc.bysykkel;
+package no.rkkc.bysykkel.views;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import no.rkkc.bysykkel.OsloCityBikeAdapter;
+import no.rkkc.bysykkel.R;
+import no.rkkc.bysykkel.RackInfoDialog;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
+import no.rkkc.bysykkel.db.DbAdapter;
+import no.rkkc.bysykkel.db.RackDbAdapter;
+import no.rkkc.bysykkel.model.Rack;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -53,7 +60,7 @@ public class Map extends MapActivity {
 	MapView map;
 	MyLocationOverlay myLocation;
 	MapController mapController;
-	DbAdapter db;
+	RackDbAdapter db;
 	OsloCityBikeAdapter osloCityBikeAdapter;
 	
 	GeoPoint savedLocation;
@@ -79,7 +86,7 @@ public class Map extends MapActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        db = new DbAdapter(Map.this, "racks").open();
+        db = (RackDbAdapter) new RackDbAdapter(Map.this).open();
         osloCityBikeAdapter = new OsloCityBikeAdapter();
 
         if (!isFirstRun()) {
@@ -340,16 +347,19 @@ public class Map extends MapActivity {
 	
 	/* Handles menu item selections */
 	public boolean onOptionsItemSelected(MenuItem item) {
-	    switch (item.getItemId()) {
+	    switch (item.getItemId()) { 
 		    case R.id.my_location:
 		    	animateToMyLocation();
 		        return true;
-		    /*case R.id.nearest_bike:
+//		    case R.id.favorites:
+//		    	startActivity(new Intent(this, Favorites.class));
+//		    	return true;
+		    case R.id.nearest_bike:
 		    	searchForClosestRack(FindRackCriteria.ReadyBike);
 				return true;
 		    case R.id.nearest_slot:
 		    	searchForClosestRack(FindRackCriteria.FreeSlot);
-				return true;*/
+				return true;
 	    }
 	    return false;
 	}
@@ -400,7 +410,7 @@ public class Map extends MapActivity {
 				msg.setData(bundle);
 				mDialogHandler.sendMessage(msg);
 				
-				Rack nearestRackWithReadySlot = findClosestRack(criteria);
+				Rack nearestRackWithSlotOrBike = findClosestRack(criteria);
 				
 				// Hide progress dialog
 				msg = mDialogHandler.obtainMessage();
@@ -409,7 +419,7 @@ public class Map extends MapActivity {
 				msg.setData(bundle);
 				mDialogHandler.sendMessage(msg);
 				
-				if (nearestRackWithReadySlot == null) {
+				if (nearestRackWithSlotOrBike == null) {
 					Log.w(Map.TAG, "Could not find nearest rack during search");
 					
 					// Show toast informing of the error
@@ -424,7 +434,7 @@ public class Map extends MapActivity {
 				}
 
 				RacksOverlay overlay = ((RacksOverlay) map.getOverlays().get(1));
-				int overlayIndex = overlay.findOverlayIndex(nearestRackWithReadySlot.getId());
+				int overlayIndex = overlay.findOverlayIndex(nearestRackWithSlotOrBike.getId());
 				
 				Drawable marker_normal = getResources().getDrawable(R.drawable.bubble);
 				marker_normal.setBounds(-marker_normal.getIntrinsicWidth()/2, 
@@ -437,7 +447,33 @@ public class Map extends MapActivity {
 				
 				overlay.getItem(overlayIndex).setMarker(marker_highlighted);
 			
-				mapController.animateTo(nearestRackWithReadySlot.getLocation());
+				mapController.animateTo(nearestRackWithSlotOrBike.getLocation());
+				
+				int noOfFreeItems;;
+				String itemType;
+				if (criteria == FindRackCriteria.FreeSlot) {
+					noOfFreeItems = nearestRackWithSlotOrBike.getNumberOfEmptySlots();
+					if (noOfFreeItems > 1) {
+						itemType = getText(R.string.word_slots).toString();
+					} else {
+						itemType = getText(R.string.word_slot).toString();
+					}
+				} else {
+					noOfFreeItems = nearestRackWithSlotOrBike.getNumberOfReadyBikes();
+					if (noOfFreeItems > 1) {
+						itemType = getText(R.string.word_bikes).toString();
+					} else {
+						itemType = getText(R.string.word_bike).toString();
+					}
+				}
+				
+				// Show toast informing of number of free bikes/slots
+				msg = toastHandler.obtainMessage();
+				bundle = new Bundle();
+				bundle.putString("text", Integer.toString(noOfFreeItems) + " " + itemType); // A message like "x free slot(s)"
+				bundle.putInt("time", Toast.LENGTH_SHORT);
+				msg.setData(bundle);
+				toastHandler.sendMessage(msg);
 
 				try {
 					Thread.sleep(5000);

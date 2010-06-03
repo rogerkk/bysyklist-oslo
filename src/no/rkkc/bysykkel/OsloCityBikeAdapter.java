@@ -33,6 +33,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
 
+import no.rkkc.bysykkel.model.Rack;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -48,6 +50,8 @@ import android.util.Log;
 public class OsloCityBikeAdapter {
     HttpClient httpClient;
     HttpGet httpGet;
+    
+    private static final String TAG = "Bysyklist-OsloCityBikeAdapter";
     
     public OsloCityBikeAdapter() {
         httpGet = new HttpGet();
@@ -155,6 +159,7 @@ public class OsloCityBikeAdapter {
         String xml;
         try {
         	xml = makeWebServiceCall(wsMethod);
+        	Log.v(OsloCityBikeAdapter.TAG, xml); // TODO: Remove this logging before release
         } catch (Exception e) {
         	throw new OsloCityBikeCommunicationException(e);
         }
