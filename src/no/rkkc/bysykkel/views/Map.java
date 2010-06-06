@@ -513,6 +513,7 @@ public class Map extends MapActivity {
 		for (LocationAndDistance lad : sortedStationLocations) {
 			try {
 				rack = osloCityBikeAdapter.getRack(lad.getStationIndex());
+				if (!rack.hasBikeAndSlotInfo()) continue;
 				if ((criteria == FindRackCriteria.ReadyBike && rack.getNumberOfReadyBikes() > 0)
 						|| (criteria == FindRackCriteria.FreeSlot && 
 								rack.getNumberOfEmptySlots() > 0)) {

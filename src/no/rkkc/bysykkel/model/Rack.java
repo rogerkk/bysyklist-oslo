@@ -89,6 +89,10 @@ public class Rack {
 		return location;
 	}
 	
+	public boolean hasBikeAndSlotInfo() {
+		return hasInfoOnReadyBikes() && hasInfoOnEmptyLocks();
+	}
+	
 	public String toString() {
 		return getId()+": "+getDescription();
 	}
