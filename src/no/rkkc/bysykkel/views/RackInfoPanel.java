@@ -30,20 +30,7 @@ public class RackInfoPanel extends TransparentPanel {
 	Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
-			TextView mInfoText = (TextView)findViewById(R.id.information);
-			Bundle mData = msg.getData();
-			
-			if (mData.getBoolean("online")) {
-				String strFreeBikes = getContext().getString(R.string.rackdialog_freebikes);
-				strFreeBikes = String.format(strFreeBikes, mData.getInt("bikes"));
-				String strFreeSlots = getContext().getString(R.string.rackdialog_freeslots);
-				strFreeSlots = String.format(strFreeSlots, mData.getInt("slots"));
-				mInfoText.setText(strFreeBikes.concat("\n").concat(strFreeSlots));
-			} else if (mData.getBoolean("error")) {
-				mInfoText.setText(getContext().getString(R.string.error_communication_failed));
-			} else {
-				mInfoText.setText(getContext().getString(R.string.rackdialog_not_online));
-			}
+			setRackStatus(msg.getData());
 		}
 	};
 	
@@ -74,9 +61,35 @@ public class RackInfoPanel extends TransparentPanel {
 					msg.setData(bundle);
 					handler.sendMessage(msg);
 				}
+				
+				// Wait for some seconds, then close the panel
+				try {
+					Thread.sleep(10000);
+				} catch (InterruptedException e) {
+			    } finally {
+			    	((Map)getContext()).panelHandler.sendMessage(new Message());
+				}
 			}
 		});
 		
 		background.start();
+	}
+
+	/**
+	 * @param mData
+	 */
+	private void setRackStatus(Bundle mData) {
+		TextView mInfoText = (TextView)findViewById(R.id.information);
+		if (mData.getBoolean("online")) {
+			String strFreeBikes = getContext().getString(R.string.rackdialog_freebikes);
+			strFreeBikes = String.format(strFreeBikes, mData.getInt("bikes"));
+			String strFreeSlots = getContext().getString(R.string.rackdialog_freeslots);
+			strFreeSlots = String.format(strFreeSlots, mData.getInt("slots"));
+			mInfoText.setText(strFreeBikes.concat("\n").concat(strFreeSlots));
+		} else if (mData.getBoolean("error")) {
+			mInfoText.setText(getContext().getString(R.string.error_communication_failed));
+		} else {
+			mInfoText.setText(getContext().getString(R.string.rackdialog_not_online));
+		}
 	}
 }

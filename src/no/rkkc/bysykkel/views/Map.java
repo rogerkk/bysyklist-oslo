@@ -84,6 +84,13 @@ public class Map extends MapActivity {
 		}
 	};
 	
+	Handler panelHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			viewHolder.infoPanel.setVisibility(View.GONE);
+		}
+	};
+	
 	
     /** Called when the activity is first created. */
     @Override
