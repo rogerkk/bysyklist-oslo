@@ -25,7 +25,6 @@ import java.util.NoSuchElementException;
 
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
-import no.rkkc.bysykkel.RackInfoDialog;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import no.rkkc.bysykkel.db.DbAdapter;
@@ -45,7 +44,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.Window;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.maps.GeoPoint;
@@ -57,11 +59,13 @@ import com.google.android.maps.MyLocationOverlay;
 import com.google.android.maps.OverlayItem;
 
 public class Map extends MapActivity {
-	MapView map;
-	MyLocationOverlay myLocation;
-	MapController mapController;
-	RackDbAdapter db;
-	OsloCityBikeAdapter osloCityBikeAdapter;
+	private MapView map;
+	private MyLocationOverlay myLocation;
+	private MapController mapController;
+	private RackDbAdapter db;
+	private OsloCityBikeAdapter osloCityBikeAdapter;
+	private static ViewHolder viewHolder = new ViewHolder();
+
 	
 	GeoPoint savedLocation;
 	int savedZoomLevel;
@@ -96,8 +100,14 @@ public class Map extends MapActivity {
         
         setContentView(R.layout.main);
         
+        // Set up map view
         map = (MapView)findViewById(R.id.map);
         map.setBuiltInZoomControls(true);
+        viewHolder.infoPanel = (RackInfoPanel) findViewById(R.id.infoPanel);
+        viewHolder.infoPanel.setVisibility(View.GONE);
+        viewHolder.name = (TextView) findViewById(R.id.name);
+        viewHolder.information = (TextView) findViewById(R.id.information);
+
         mapController = map.getController();
 
         setupMyLocation(savedInstanceState);
@@ -591,8 +601,12 @@ public class Map extends MapActivity {
 		@Override
 		protected boolean onTap(int i) {
 			Rack rack = findRack(i);
-			Dialog dialog = new RackInfoDialog(Map.this, rack.getDescription(), rack.getId());
-			dialog.show();
+			
+			viewHolder.name.setText(rack.getDescription());
+			viewHolder.information.setText(R.string.rackdialog_fetching);
+			viewHolder.infoPanel.setRackId(rack.getId());
+			viewHolder.infoPanel.setVisibility(View.VISIBLE);
+			viewHolder.infoPanel.getStatusInfo();
 			
 			return true;
 		}
@@ -628,4 +642,14 @@ public class Map extends MapActivity {
 					+ " doesn't exists");
 		}
 	}
+	
+    static class ViewHolder {
+        ImageButton list;
+
+        RackInfoPanel infoPanel;
+        TextView name;
+        TextView information;
+        ImageButton select;
+    }
+
 }
