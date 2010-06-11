@@ -20,6 +20,10 @@ public class FavoritesDbAdapter extends DbAdapter {
 		super(context, TABLE);
 	}
 	
+	public FavoritesDbAdapter open() {
+		return (FavoritesDbAdapter)super.open();
+	}
+	
 	public ArrayList<Favorite> getFavorites() {
 		String[] fieldsToReturn = new String[]{ID, RACK_ID, COUNTER, STARRED};
 		
@@ -39,7 +43,7 @@ public class FavoritesDbAdapter extends DbAdapter {
 		return favorites;
 	}
 	
-	public void insertFavourite(int rackId) {
+	public void insertFavorite(int rackId) {
 		// TODO: Check that the rack is not already a favorite
 		ContentValues cv = new ContentValues();
 		cv.put(RACK_ID, rackId);
@@ -48,20 +52,43 @@ public class FavoritesDbAdapter extends DbAdapter {
 
 		db.insert(TABLE, null, cv);
 	}
+	
+	public Favorite getFavorite(int rackId) {
+		String[] columns = {ID, RACK_ID, COUNTER, STARRED};
+		String[] selectArgs = new String[] { Integer.toString(rackId) };
+		Cursor cursor = db.query(TABLE, columns, "rackid = ?", selectArgs, null, null, null);
+		if (cursor.getCount() > 0) {
+			cursor.moveToFirst();
+			int id = cursor.getInt(cursor.getColumnIndex(ID));
+			int counter = cursor.getInt(cursor.getColumnIndex(COUNTER));
+			boolean starred = (cursor.getInt(cursor.getColumnIndex(STARRED)) == 1) ? true : false;
+			
+			return new Favorite(id, rackId, counter, starred);
+		} else {
+			return null;
+		}
+	}
 
 	public void addToCounter(int rackId) {
-		// TODO: Check that rack is a favorite. If not, add it as one.
-		Cursor cursor = db.query(TABLE, new String[] {COUNTER}, "id = ?", new String[] { Integer.toString(rackId) }, null, null, null);
+		
+		// Check if rack is in favorites table. If not, add it as one.
+		Favorite favorite = getFavorite(rackId);
+		if (favorite == null) {
+			insertFavorite(rackId);
+		}
+		
+		Cursor cursor = db.query(TABLE, new String[] {COUNTER}, "rackid = ?", new String[] { Integer.toString(rackId) }, null, null, null);
+		cursor.moveToFirst();
 		
 		ContentValues cv = new ContentValues();
-		cv.put(COUNTER, cursor.getInt(cursor.getColumnIndex(COUNTER)));
-		db.update(TABLE, cv, "id = ?", new String[] { Integer.toString(rackId) });
+		cv.put(COUNTER, cursor.getInt(cursor.getColumnIndex(COUNTER))+1);
+		db.update(TABLE, cv, "rackid = ?", new String[] { Integer.toString(rackId) });
 	}
 
 	public boolean isStarred(int rackId) {
 		String[] columns = { STARRED };
 
-		Cursor cursor = db.query(TABLE, columns, "id = ?",
+		Cursor cursor = db.query(TABLE, columns, "rackid = ?",
 				new String[] { Integer.toString(rackId) }, null, null, null);
 
 		cursor.moveToFirst();

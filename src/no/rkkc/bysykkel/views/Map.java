@@ -351,9 +351,9 @@ public class Map extends MapActivity {
 		    case R.id.my_location:
 		    	animateToMyLocation();
 		        return true;
-//		    case R.id.favorites:
-//		    	startActivity(new Intent(this, Favorites.class));
-//		    	return true;
+		    case R.id.favorites:
+		    	startActivity(new Intent(this, Favorites.class));
+		    	return true;
 		    case R.id.nearest_bike:
 		    	searchForClosestRack(FindRackCriteria.ReadyBike);
 				return true;
@@ -513,7 +513,9 @@ public class Map extends MapActivity {
 		for (LocationAndDistance lad : sortedStationLocations) {
 			try {
 				rack = osloCityBikeAdapter.getRack(lad.getStationIndex());
-				if (!rack.hasBikeAndSlotInfo()) continue;
+				
+				if (!rack.hasBikeAndSlotInfo()) continue; // Sometimes we get no information from the rack, so just skip it.
+				
 				if ((criteria == FindRackCriteria.ReadyBike && rack.getNumberOfReadyBikes() > 0)
 						|| (criteria == FindRackCriteria.FreeSlot && 
 								rack.getNumberOfEmptySlots() > 0)) {
@@ -594,6 +596,8 @@ public class Map extends MapActivity {
 			
 			return true;
 		}
+		
+		
 		
 		private Rack findRack(int overlayIndex) {
 			Rack rack = null;

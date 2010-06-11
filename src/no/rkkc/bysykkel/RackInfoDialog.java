@@ -19,6 +19,7 @@
 package no.rkkc.bysykkel;
 
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
+import no.rkkc.bysykkel.db.FavoritesDbAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import android.app.Dialog;
 import android.content.Context;
@@ -64,6 +65,9 @@ public class RackInfoDialog extends Dialog implements OnClickListener {
 		super(context);
 		
 		rackId = id;
+		
+		FavoritesDbAdapter favDbAdapter = new FavoritesDbAdapter(context).open();
+		favDbAdapter.addToCounter(rackId);
 		
 		setTitle(R.string.rackdialog_title);
 		setContentView(R.layout.rackinfo_dialog);

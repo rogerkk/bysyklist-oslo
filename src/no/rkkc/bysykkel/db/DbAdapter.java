@@ -86,7 +86,7 @@ public abstract class DbAdapter {
 	
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			if (oldVersion <= 4) {
+			if (oldVersion <= 6) {
 				db.execSQL("CREATE TABLE favorites " +
 					 	"(id INTEGER PRIMARY KEY, " +
 					 	"rackid INTEGER, " +
