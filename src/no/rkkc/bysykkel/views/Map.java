@@ -49,6 +49,8 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -86,13 +88,6 @@ public class Map extends MapActivity {
 		@Override
 		public void handleMessage(Message msg) {
 			Toast.makeText(getBaseContext(), msg.getData().getString("text"), msg.getData().getInt("time")).show();
-		}
-	};
-	
-	Handler infoPanelHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			hideRackInfo();
 		}
 	};
 	
@@ -241,7 +236,7 @@ public class Map extends MapActivity {
 		Drawable icon = getResources().getDrawable(R.drawable.bubble);
 		icon.setBounds(0, 0, icon.getIntrinsicWidth(), icon
 				.getIntrinsicHeight());
-        RacksOverlay rackOverlay = new RacksOverlay(icon, racks, infoPanelHandler);
+        RacksOverlay rackOverlay = new RacksOverlay(icon, racks);
 		return rackOverlay;
 	}
 
@@ -388,6 +383,11 @@ public class Map extends MapActivity {
 	@Override
 	public boolean dispatchTouchEvent(MotionEvent event) {
 		catchLongPress(event);
+		
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			hideRackInfo();
+		}
+		
 		return super.dispatchTouchEvent(event);
 	}
 
@@ -684,12 +684,10 @@ public class Map extends MapActivity {
 	private class RacksOverlay extends ItemizedOverlay<OverlayItem> {
 		private List<OverlayItem> items = new ArrayList<OverlayItem>();
 		private ArrayList<Rack> racks;
-		private Handler infoPanelHandler;
 		
-		public RacksOverlay(Drawable marker, ArrayList<Rack> racks, Handler infoPanelHandler) {
+		public RacksOverlay(Drawable marker, ArrayList<Rack> racks) {
 			super(marker);
 			this.racks = racks;
-			this.infoPanelHandler = infoPanelHandler;
 			
 			boundCenterBottom(marker);
 			
@@ -724,18 +722,6 @@ public class Map extends MapActivity {
 			
 			return true;
 		}
-		
-		@Override
-		public boolean onTouchEvent(MotionEvent event, MapView mapView) {
-			// Whenever the user performs some action on the map, close the info panel to reveal the entire map.
-			if (event.getAction() == MotionEvent.ACTION_DOWN) {
-				infoPanelHandler.sendEmptyMessage(1);
-			}
-			
-			return super.onTouchEvent(event, mapView);
-		}
-		
-		
 		
 		private Rack findRack(int overlayIndex) {
 			Rack rack = null;
