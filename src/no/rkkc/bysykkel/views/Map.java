@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import no.rkkc.bysykkel.LongpressHelper;
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
@@ -68,8 +69,8 @@ public class Map extends MapActivity {
 	private OsloCityBikeAdapter osloCityBikeAdapter;
 	private ViewHolder viewHolder = new ViewHolder();
 	
-	private Location lastLongPressedLocation = new Location("Bysyklist");
-	private boolean isPressed;
+	private Location contextMenuLocation = new Location("Longpress");
+	private LongpressHelper contextMenuHelper = new LongpressHelper();
 	
 	GeoPoint savedLocation;
 	int savedZoomLevel;
@@ -386,55 +387,50 @@ public class Map extends MapActivity {
 	 */
 	@Override
 	public boolean dispatchTouchEvent(MotionEvent event) {
-		
-		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+		catchLongPress(event);
+		return super.dispatchTouchEvent(event);
+	}
+
+	/**
+	 * Handles calling of the context menu, if longpress is detected on map.
+	 * 
+	 * Takes a MotionEvent as argument, and if method is not called again with an event that
+	 * indicates that this is anything but a longpress, a message is sent to display the context
+	 * menu. Any event except MotionEvent.ACTION_DOWN will reset the longpress detection.
+	 * 
+	 * @param event	as passed into dispatchTouchEvent.
+	 */
+	private void catchLongPress(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN) { // New touch has been detected
 			final MotionEvent touchEvent = event;
 			new Thread(new Runnable(){
 				public void run() {
 					Looper.prepare();
-					try {
-						Log.v(TAG, "Press detected: "+Integer.toString(touchEvent.getAction()));
-						isPressed = true;
-						Thread.sleep(500);
-						if (isPressed) {
-							Log.v(TAG, "Longpress detected");
-							// Longpress detected
-							GeoPoint point = map.getProjection().fromPixels((int)touchEvent.getX(), 
-														   					(int)touchEvent.getY());
-							
-							// Keep longpress location to be used when selecting action from 
-							// context menu
-							lastLongPressedLocation.setLatitude(point.getLatitudeE6() / 1E6);
-							lastLongPressedLocation.setLongitude(point.getLongitudeE6() / 1E6);
-							
-							// Send message to show context menu
-							contextMenuHandler.sendEmptyMessage(0);
-						}
-					} catch (InterruptedException e) {
-						// Don't do anything, let the finally clause reset isPressed.
-					} finally {
-						isPressed = false;
+					if (contextMenuHelper.isLongPressDetected()) {
+						// Store event location for usage by context menu actions
+						storeEventLocationForContextMenu(touchEvent);
+						
+						// Show the context menu
+						contextMenuHandler.sendEmptyMessage(0);
 					}
 				}
-	
 				}).start();
-		} else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-
-			// Get difference in position since previous move event
-			float diffX = event.getX()-event.getHistoricalX(event.getHistorySize()-1);
-			float diffY = event.getY()-event.getHistoricalY(event.getHistorySize()-1);
-			
-			Log.v(TAG, "DiffX: "+Float.toString(diffX) + ", DiffY: " + Float.toString(diffY));
-			
-			if (Math.abs(diffX) > 0.5 || Math.abs(diffY) > 0.5) {
-				isPressed = false;
-			}
 		} else {
-			Log.v(TAG, "Action: " + Integer.toString(event.getAction()) + ". isPressed settes til false");
-			isPressed = false;
+			contextMenuHelper.handleMotionEvent(event);
 		}
-		
-		return super.dispatchTouchEvent(event);
+	}
+
+	/**
+	 * Stores event location for usage by the context menu
+	 * 
+	 * @param event
+	 */
+	private void storeEventLocationForContextMenu(MotionEvent event) {
+		GeoPoint point = map.getProjection().fromPixels((int)event.getX(), 
+				(int)event.getY());
+	
+		contextMenuLocation.setLatitude(point.getLatitudeE6() / 1E6);
+		contextMenuLocation.setLongitude(point.getLongitudeE6() / 1E6);    
 	}
 	
 	public void onCreateContextMenu(ContextMenu  menu, View  v, ContextMenu.ContextMenuInfo  menuInfo) {
@@ -445,10 +441,10 @@ public class Map extends MapActivity {
 	public boolean onContextItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case Menu.FIRST:
-				searchForClosestRack(lastLongPressedLocation, FindRackCriteria.ReadyBike);
+				searchForClosestRack(contextMenuLocation, FindRackCriteria.ReadyBike);
 				return true;
 			case Menu.FIRST+1:
-				searchForClosestRack(lastLongPressedLocation, FindRackCriteria.FreeSlot);
+				searchForClosestRack(contextMenuLocation, FindRackCriteria.FreeSlot);
 				return true;
 		}
 			
