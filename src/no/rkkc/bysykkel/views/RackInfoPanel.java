@@ -1,3 +1,21 @@
+/**
+ *   Copyright (C) 2010, Roger Kind Kristiansen <roger@kind-kristiansen.no>
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package no.rkkc.bysykkel.views;
 
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
@@ -38,8 +56,13 @@ public class RackInfoPanel extends TransparentPanel {
 		this.rackId = rackId;
 	}
 	
+	/**
+	 * Retrieves status info from ClearChannel and sends message to the handler to update the
+	 * panel with this status info.
+	 */
 	public void getStatusInfo() {
-		Thread background = new Thread(new Runnable() {
+		
+		new Thread(new Runnable() {
 			public void run() {
 				OsloCityBikeAdapter ocbAdapter= new OsloCityBikeAdapter();
 				Message msg = Message.obtain();
@@ -48,9 +71,9 @@ public class RackInfoPanel extends TransparentPanel {
 				try {
 					Rack rack = ocbAdapter.getRack(rackId);
 					if (rack.isOnline()) {
+						bundle.putBoolean("online", true);
 						bundle.putInt("bikes", rack.getNumberOfReadyBikes());
 						bundle.putInt("slots", rack.getNumberOfEmptySlots());
-						bundle.putBoolean("online", true);
 					} else {
 						bundle.putBoolean("online", false);
 					}
@@ -61,21 +84,13 @@ public class RackInfoPanel extends TransparentPanel {
 					msg.setData(bundle);
 					handler.sendMessage(msg);
 				}
-				
-				// Wait for some seconds, then close the panel
-				try {
-					Thread.sleep(10000);
-				} catch (InterruptedException e) {
-			    } finally {
-			    	((Map)getContext()).panelHandler.sendMessage(new Message());
-				}
 			}
-		});
-		
-		background.start();
+		}).start();
 	}
 
 	/**
+	 * Updates the panel with given data
+	 * 
 	 * @param mData
 	 */
 	private void setRackStatus(Bundle mData) {
