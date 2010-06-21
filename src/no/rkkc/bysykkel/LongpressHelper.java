@@ -37,7 +37,9 @@ public class LongpressHelper {
 	public void handleMotionEvent(MotionEvent event) {
 		if (event.getAction() == MotionEvent.ACTION_MOVE) {
 
-			// Get difference in position since previous move event
+			if (event.getHistorySize() < 1) return; // First call
+			
+				// Get difference in position since previous move event
 			float diffX = event.getX()-event.getHistoricalX(event.getHistorySize()-1);
 			float diffY = event.getY()-event.getHistoricalY(event.getHistorySize()-1);
 			
