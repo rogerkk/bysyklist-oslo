@@ -4,10 +4,10 @@
           android:title="@string/menu_my_location" 
           android:icon="@android:drawable/ic_menu_mylocation"
           />
-    <item android:id="@+id/favorites"
+    <!-- item android:id="@+id/favorites"
           android:title="@string/menu_favorites"
           android:icon="@android:drawable/ic_menu_myplaces"
-          />
+          /-->
     <item android:id="@+id/nearest_bike"
           android:title="@string/menu_nearest_bike"
           />
