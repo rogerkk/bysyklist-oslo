@@ -6,7 +6,7 @@
         android:paddingTop="5dip"
         android:paddingRight="5dip"
         android:paddingBottom="5dip">
-       
+
         <no.rkkc.bysykkel.views.RackInfoPanel xmlns:android="http://schemas.android.com/apk/res/android"
                 android:id="@+id/infoPanel"
             android:layout_width="fill_parent"
@@ -52,6 +52,5 @@
         android:src="@drawable/ic_menu_sort_by_size"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true" /-->
-               
-</RelativeLayout>
 
+</RelativeLayout>
