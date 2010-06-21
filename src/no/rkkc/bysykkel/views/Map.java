@@ -581,7 +581,7 @@ public class Map extends MapActivity {
 				toastHandler.sendMessage(msg);
 
 				try {
-					Thread.sleep(5000);
+					Thread.sleep(3000);
 				} catch (InterruptedException e) {
 					// Don't do anything. The finally-clause will revert to previous state anyway.
 				} finally {
