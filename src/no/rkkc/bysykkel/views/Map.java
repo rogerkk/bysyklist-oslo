@@ -41,9 +41,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageButton;
@@ -64,8 +66,10 @@ public class Map extends MapActivity {
 	private MapController mapController;
 	private RackDbAdapter db;
 	private OsloCityBikeAdapter osloCityBikeAdapter;
-	private static ViewHolder viewHolder = new ViewHolder();
-
+	private ViewHolder viewHolder = new ViewHolder();
+	
+	private Location lastLongPressedLocation = new Location("Bysyklist");
+	private boolean isPressed;
 	
 	GeoPoint savedLocation;
 	int savedZoomLevel;
@@ -84,13 +88,19 @@ public class Map extends MapActivity {
 		}
 	};
 	
-	Handler panelHandler = new Handler() {
+	Handler infoPanelHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
-			viewHolder.infoPanel.setVisibility(View.GONE);
+			hideRackInfo();
 		}
 	};
 	
+	Handler contextMenuHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			map.showContextMenu();
+		}
+	};
 	
     /** Called when the activity is first created. */
     @Override
@@ -108,14 +118,24 @@ public class Map extends MapActivity {
         setContentView(R.layout.main);
         
         // Set up map view
+        // TODO: Create own MapView class
         map = (MapView)findViewById(R.id.map);
         map.setBuiltInZoomControls(true);
-        viewHolder.infoPanel = (RackInfoPanel) findViewById(R.id.infoPanel);
-        viewHolder.infoPanel.setVisibility(View.GONE);
-        viewHolder.name = (TextView) findViewById(R.id.name);
-        viewHolder.information = (TextView) findViewById(R.id.information);
+        registerForContextMenu(map);
+        
+//        map.setOnLongClickListener(new View.OnLongClickListener(){
+//        	public boolean onLongClick(View v) { 
+//        		Log.v("TEST3", "longpress!");
+//        		map.showContextMenu();
+//        		return true; 
+//        	}
+//        }); 
 
         mapController = map.getController();
+		viewHolder.infoPanel = (RackInfoPanel) findViewById(R.id.infoPanel);
+		viewHolder.infoPanel.setVisibility(View.GONE);
+        viewHolder.name = (TextView) viewHolder.infoPanel.findViewById(R.id.name);
+        viewHolder.information = (TextView) findViewById(R.id.information);
 
         setupMyLocation(savedInstanceState);
     	
@@ -138,6 +158,10 @@ public class Map extends MapActivity {
     	} else {
     		return false;
     	}
+    }
+    
+    public MapView getMapView() {
+    	return map;
     }
     
 	/**
@@ -216,7 +240,7 @@ public class Map extends MapActivity {
 		Drawable icon = getResources().getDrawable(R.drawable.bubble);
 		icon.setBounds(0, 0, icon.getIntrinsicWidth(), icon
 				.getIntrinsicHeight());
-        RacksOverlay rackOverlay = new RacksOverlay(icon, racks);
+        RacksOverlay rackOverlay = new RacksOverlay(icon, racks, infoPanelHandler);
 		return rackOverlay;
 	}
 
@@ -355,6 +379,82 @@ public class Map extends MapActivity {
 		return false;
 	}
 	
+	/**
+	 * Override dispatchTouchEvent to catch a longpress anywhere on the map and display a 
+	 * context menu.
+	 * 
+	 */
+	@Override
+	public boolean dispatchTouchEvent(MotionEvent event) {
+		
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			final MotionEvent touchEvent = event;
+			new Thread(new Runnable(){
+				public void run() {
+					Looper.prepare();
+					try {
+						Log.v(TAG, "Press detected: "+Integer.toString(touchEvent.getAction()));
+						isPressed = true;
+						Thread.sleep(500);
+						if (isPressed) {
+							Log.v(TAG, "Longpress detected");
+							// Longpress detected
+							GeoPoint point = map.getProjection().fromPixels((int)touchEvent.getX(), 
+														   					(int)touchEvent.getY());
+							
+							// Keep longpress location to be used when selecting action from 
+							// context menu
+							lastLongPressedLocation.setLatitude(point.getLatitudeE6() / 1E6);
+							lastLongPressedLocation.setLongitude(point.getLongitudeE6() / 1E6);
+							
+							// Send message to show context menu
+							contextMenuHandler.sendEmptyMessage(0);
+						}
+					} catch (InterruptedException e) {
+						// Don't do anything, let the finally clause reset isPressed.
+					} finally {
+						isPressed = false;
+					}
+				}
+	
+				}).start();
+		} else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+
+			// Get difference in position since previous move event
+			float diffX = event.getX()-event.getHistoricalX(event.getHistorySize()-1);
+			float diffY = event.getY()-event.getHistoricalY(event.getHistorySize()-1);
+			
+			Log.v(TAG, "DiffX: "+Float.toString(diffX) + ", DiffY: " + Float.toString(diffY));
+			
+			if (Math.abs(diffX) > 0.5 || Math.abs(diffY) > 0.5) {
+				isPressed = false;
+			}
+		} else {
+			Log.v(TAG, "Action: " + Integer.toString(event.getAction()) + ". isPressed settes til false");
+			isPressed = false;
+		}
+		
+		return super.dispatchTouchEvent(event);
+	}
+	
+	public void onCreateContextMenu(ContextMenu  menu, View  v, ContextMenu.ContextMenuInfo  menuInfo) {
+		menu.add(Menu.NONE, Menu.FIRST, Menu.NONE, "Nærmeste sykkel");
+		menu.add(Menu.NONE, Menu.FIRST+1, Menu.NONE, "Nærmeste stativ");
+	}
+	
+	public boolean onContextItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case Menu.FIRST:
+				searchForClosestRack(lastLongPressedLocation, FindRackCriteria.ReadyBike);
+				return true;
+			case Menu.FIRST+1:
+				searchForClosestRack(lastLongPressedLocation, FindRackCriteria.FreeSlot);
+				return true;
+		}
+			
+		return super.onContextItemSelected(item);
+	}
+	
 	/* Menu */
 	public boolean onCreateOptionsMenu(Menu menu) {
 	    MenuInflater inflater = getMenuInflater();
@@ -372,10 +472,10 @@ public class Map extends MapActivity {
 		    	startActivity(new Intent(this, Favorites.class));
 		    	return true;
 		    case R.id.nearest_bike:
-		    	searchForClosestRack(FindRackCriteria.ReadyBike);
+		    	searchForClosestRack(myLocation.getLastFix(), FindRackCriteria.ReadyBike);
 				return true;
 		    case R.id.nearest_slot:
-		    	searchForClosestRack(FindRackCriteria.FreeSlot);
+		    	searchForClosestRack(myLocation.getLastFix(), FindRackCriteria.FreeSlot);
 				return true;
 	    }
 	    return false;
@@ -396,8 +496,9 @@ public class Map extends MapActivity {
 	 * 
 	 * @param criteria
 	 */
-	public void searchForClosestRack(final FindRackCriteria criteria) {
+	public void searchForClosestRack(final Location searchLocation, final FindRackCriteria criteria) {
 		
+		// TODO: Dialog-related, should be cleaned up
 		final Handler mDialogHandler = new Handler() {
 			@Override
 			public void handleMessage(Message msg) {
@@ -427,7 +528,7 @@ public class Map extends MapActivity {
 				msg.setData(bundle);
 				mDialogHandler.sendMessage(msg);
 				
-				Rack nearestRackWithSlotOrBike = findClosestRack(criteria);
+				Rack nearestRackWithSlotOrBike = findClosestRack(searchLocation, criteria);
 				
 				// Hide progress dialog
 				msg = mDialogHandler.obtainMessage();
@@ -505,11 +606,10 @@ public class Map extends MapActivity {
 			}).start();		
 	}
 	
-	public Rack findClosestRack(FindRackCriteria criteria) {
+	public Rack findClosestRack(Location searchLocation, FindRackCriteria criteria) {
 		// TODO: Do we want to provide closest station from currently centered, or perhaps from a longpress?
 		
-		Location center = myLocation.getLastFix(); 
-		if (center == null) {
+		if (searchLocation == null) {
 			// No location has been set.
 			return null;
 		}
@@ -517,10 +617,10 @@ public class Map extends MapActivity {
 		List<LocationAndDistance> sortedStationLocations = new ArrayList<LocationAndDistance>();
 		for (Rack rack : db.getRacks()) {
 			Log.v(Map.TAG, rack.toString());
-			Location loc = new Location("Bysyklist");
-			loc.setLatitude(rack.getLocation().getLatitudeE6() / 1E6);
-			loc.setLongitude(rack.getLocation().getLongitudeE6() / 1E6);
-			sortedStationLocations.add(new LocationAndDistance(rack, center.distanceTo(loc)));
+			Location rackLocation = new Location("Bysyklist");
+			rackLocation.setLatitude(rack.getLocation().getLatitudeE6() / 1E6);
+			rackLocation.setLongitude(rack.getLocation().getLongitudeE6() / 1E6);
+			sortedStationLocations.add(new LocationAndDistance(rack, searchLocation.distanceTo(rackLocation)));
 		}
 		Collections.sort(sortedStationLocations);
 
@@ -551,6 +651,20 @@ public class Map extends MapActivity {
 		return foundRack;
 	}
 	
+	public void showRackInfo(Rack rack) {
+		viewHolder.name.setText(rack.getDescription());
+		viewHolder.information.setText(R.string.rackdialog_fetching);
+		viewHolder.infoPanel.setRackId(rack.getId());
+		viewHolder.infoPanel.setVisibility(View.VISIBLE);
+		viewHolder.infoPanel.getStatusInfo();
+	}
+	
+	public void hideRackInfo() {
+		if (viewHolder.infoPanel != null) {
+			viewHolder.infoPanel.setVisibility(View.GONE);
+		}
+	}
+	
 	private static class LocationAndDistance implements Comparable<LocationAndDistance> {
 		private Rack rack;
 		// private Location location;
@@ -572,14 +686,15 @@ public class Map extends MapActivity {
 	}
 	
 	private class RacksOverlay extends ItemizedOverlay<OverlayItem> {
-		private Drawable marker=null;
 		private List<OverlayItem> items = new ArrayList<OverlayItem>();
 		private ArrayList<Rack> racks;
+		private Handler infoPanelHandler;
 		
-		public RacksOverlay(Drawable marker, ArrayList<Rack> racks) {
+		public RacksOverlay(Drawable marker, ArrayList<Rack> racks, Handler infoPanelHandler) {
 			super(marker);
-			this.marker = marker;
 			this.racks = racks;
+			this.infoPanelHandler = infoPanelHandler;
+			
 			boundCenterBottom(marker);
 			
 			populate();
@@ -609,13 +724,19 @@ public class Map extends MapActivity {
 		protected boolean onTap(int i) {
 			Rack rack = findRack(i);
 			
-			viewHolder.name.setText(rack.getDescription());
-			viewHolder.information.setText(R.string.rackdialog_fetching);
-			viewHolder.infoPanel.setRackId(rack.getId());
-			viewHolder.infoPanel.setVisibility(View.VISIBLE);
-			viewHolder.infoPanel.getStatusInfo();
+			showRackInfo(rack);
 			
 			return true;
+		}
+		
+		@Override
+		public boolean onTouchEvent(MotionEvent event, MapView mapView) {
+			// Whenever the user performs some action on the map, close the info panel to reveal the entire map.
+			if (event.getAction() == MotionEvent.ACTION_DOWN) {
+				infoPanelHandler.sendEmptyMessage(1);
+			}
+			
+			return super.onTouchEvent(event, mapView);
 		}
 		
 		
@@ -650,13 +771,13 @@ public class Map extends MapActivity {
 		}
 	}
 	
+
     static class ViewHolder {
         ImageButton list;
 
         RackInfoPanel infoPanel;
         TextView name;
         TextView information;
-        ImageButton select;
     }
-
+	
 }
