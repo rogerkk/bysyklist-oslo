@@ -35,7 +35,7 @@ public class TransparentPanel extends RelativeLayout {
                 mBackgroundPaint.setARGB(225, 255, 255, 255);
 
                 mBorderPaint = new Paint();
-                mBorderPaint.setARGB(255, 0, 0, 0);
+                mBorderPaint.setARGB(255, 75, 75, 75);
                 mBorderPaint.setAntiAlias(true);
                 mBorderPaint.setStyle(Style.STROKE);
                 mBorderPaint.setStrokeWidth(2);
