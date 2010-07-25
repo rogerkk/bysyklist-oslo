@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="no.rkkc.bysykkel" android:versionCode="7" android:versionName="0.5">
+      package="no.rkkc.bysykkel" android:versionCode="10" android:versionName="0.6">
+ 
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
+    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
+ 
     <application android:label="@string/app_name" android:icon="@drawable/launcher_icon">
     	<uses-library android:name="com.google.android.maps" />
         <activity android:label="@string/app_name"
@@ -15,10 +20,6 @@
     </application>
     
     <uses-sdk android:minSdkVersion="3"/>
-
-	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
-	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
 
     <supports-screens android:smallScreens="true"/>
                       
