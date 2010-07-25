@@ -39,6 +39,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -55,7 +56,10 @@ public class OsloCityBikeAdapter {
     
     public OsloCityBikeAdapter() {
         httpGet = new HttpGet();
+        
         httpClient = new DefaultHttpClient();
+        httpClient.getParams().setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT, 10000);
+        httpClient.getParams().setIntParameter(HttpConnectionParams.SO_TIMEOUT, 10000);
     }
     
     /**
@@ -81,9 +85,19 @@ public class OsloCityBikeAdapter {
         			rackIds.add(rackId);
         		}
         	}
-        } catch (Exception e) {
+        } catch (IOException e) {
+        	Log.v(TAG, e.getStackTrace().toString());
         	throw new OsloCityBikeCommunicationException(e);
-		} 
+		} catch (SAXException e) {
+			Log.v(TAG, e.getStackTrace().toString());
+			throw new OsloCityBikeCommunicationException(e);
+		} catch (ParserConfigurationException e) {
+			Log.v(TAG, e.getStackTrace().toString());
+			throw new OsloCityBikeCommunicationException(e);
+		} catch (URISyntaxException e) {
+			Log.v(TAG, e.getStackTrace().toString());
+			throw new OsloCityBikeCommunicationException(e);
+		}
         
         return rackIds;
     }
@@ -154,9 +168,8 @@ public class OsloCityBikeAdapter {
      **/
     private HashMap<String, String> getRackInfo(int id) throws OsloCityBikeException {
         String wsMethod = "getRack?id=".concat(String.valueOf(id));
-        
-        
         String xml;
+
         try {
         	xml = makeWebServiceCall(wsMethod);
         	Log.v(OsloCityBikeAdapter.TAG, xml); // TODO: Remove this logging before release
@@ -275,7 +288,7 @@ public class OsloCityBikeAdapter {
     	}
     }
     
-    private class OsloCityBikeCommunicationException extends OsloCityBikeException{
+    public class OsloCityBikeCommunicationException extends OsloCityBikeException{
 		private static final long serialVersionUID = -4574284801307284546L;
 
 		public OsloCityBikeCommunicationException(Exception e) {

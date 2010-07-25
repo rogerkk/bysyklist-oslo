@@ -18,19 +18,15 @@
 
 package no.rkkc.bysykkel.db;
 
-import java.util.ArrayList;
-
-import no.rkkc.bysykkel.model.Rack;
-
-import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 
 
 public abstract class DbAdapter {
+	
+	private static final String TAG = "Bysyklist-DbAdapter";
 
 	private Context context;
 	private DatabaseHelper dbHelper;
@@ -53,15 +49,10 @@ public abstract class DbAdapter {
 		dbHelper.close();
 	}
 	
-	
 	public class DatabaseHelper extends SQLiteOpenHelper {
 	
-		Context context;
-		
 		public DatabaseHelper(Context context) {
 			super(context, "citybike", null, 1);
-			
-			this.context = context;
 		}
 		
 		@Override
@@ -71,35 +62,10 @@ public abstract class DbAdapter {
 						"description TEXT, " +
 						"longitude INTEGER, " + // 1E6
 						"latitude INTEGER)");	 // 1E6
+		}	
 			
-			db.execSQL("CREATE TABLE favorites " +
-				 	"(id INTEGER PRIMARY KEY, " +
-				 	"rackid INTEGER, " +
-				 	"counter INTEGER, " +
-				 	"starred BOOLEAN, " + 
-					"FOREIGN KEY(rackid) REFERENCES racks(id))");
-			
-//			db.execSQL("CREATE TABLE app_state " +
-//						"(key TEXT PRIMARY KEY, " +
-//						"value TEXT)");
-		}
-	
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			if (oldVersion <= 6) {
-				db.execSQL("CREATE TABLE favorites " +
-					 	"(id INTEGER PRIMARY KEY, " +
-					 	"rackid INTEGER, " +
-					 	"counter INTEGER, " +
-					 	"starred BOOLEAN, " + 
-						"FOREIGN KEY(rackid) REFERENCES racks(id))");
-			}
-			
-//			if (oldVersion <= 2) {
-//				db.execSQL("CREATE TABLE app_state " +
-//						"key PRIMARY KEY, " +
-//						"value TEXT");
-//			}
 		}
 	}
 }

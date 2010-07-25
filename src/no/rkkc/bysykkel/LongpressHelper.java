@@ -30,7 +30,8 @@ public class LongpressHelper {
 	 * a longpress.
 	 * 
 	 * Only MotionEvent.ACTION_MOVE could potentially be regarded as part of a
-	 * longpress, as this event is trigged by the finger moving slightly on the device screen. 
+	 * longpress, as this event is trigged by the finger moving slightly on the device screen. Any
+	 * other events causes us to cancel this events status as a potential longpress.
 	 * 
 	 * @param event
 	 */
@@ -75,6 +76,9 @@ public class LongpressHelper {
 		}
 	}
 	
+	/**
+	 * Indicate that a touch event is detected
+	 */
 	private void setTouchDetected() {
 		isPotentialLongPress = true;
 	}

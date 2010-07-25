@@ -7,8 +7,9 @@
     <string name="word_slot">lås</string>
 	<string name="word_slots">låser</string>
 	
-	<string name="initdialog_title">Første oppstart</string>
-	<string name="initdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
+	<string name="syncdialog_title_init">Første oppstart</string>
+	<string name="syncdialog_title">Oppdaterer stativer</string>
+	<string name="syncdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
 	
 	<string name="searchdialog_title">Søker</string>
 	<string name="searchdialog_message_first">Søker etter ledig %s</string>
@@ -21,6 +22,8 @@
 	<string name="rackdialog_dismiss">OK</string>
 	
 	<string name="menu_my_location">Min posisjon</string>
+	<string name="menu_more">Mer</string>
+	<string name="menu_update_rack_db">Oppdater stativer</string>
 	<string name="menu_nearest_bike">Nærmeste sykkel</string>
 	<string name="menu_nearest_slot">Nærmeste lås</string>
 	<string name="menu_favorites">Favoritter</string>

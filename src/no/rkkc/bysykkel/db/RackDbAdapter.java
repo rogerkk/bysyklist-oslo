@@ -9,6 +9,8 @@ import android.database.Cursor;
 
 public class RackDbAdapter extends DbAdapter {
 
+	private static final String TAG = "Bysyklist-RackDbAdapter";
+	
 	private static String TABLE = "racks";
 	private static String ID = "id";
 	private static String ONLINE = "online";
@@ -22,20 +24,21 @@ public class RackDbAdapter extends DbAdapter {
 		super(context, TABLE);
 	}
 	
-	public void insertRack(Rack rack) {
+	public void updateOrInsertRack(Rack rack) {
 		ContentValues cv = new ContentValues();
-		cv.put(ID, rack.getId());
-		cv.put(DESCRIPTION, rack.getDescription());
 		
+		cv.put(DESCRIPTION, rack.getDescription());
 		if (rack.getLocation() != null) {
 			cv.put(LATITUDE, rack.getLocation().getLatitudeE6());
-		}
-		
-		if (rack.getLocation() != null) {
 			cv.put(LONGITUDE, rack.getLocation().getLongitudeE6());
 		}
 		
-		db.insert(TABLE, null, cv);
+		if (hasRack(rack.getId())) {
+			db.update(TABLE, cv, "id = ?", new String[] {Integer.toString(rack.getId())});
+		} else {
+			cv.put(ID, rack.getId());
+			db.insert(TABLE, null, cv);
+		}
 	}
 	
 	public void clearRacks() {
@@ -57,6 +60,26 @@ public class RackDbAdapter extends DbAdapter {
 		cursor.close();
 
 		return new Rack(id, description, latitude, longitude);
+	}
+	
+	public void deleteRack(int id) {
+		db.delete(TABLE, "id = ?", new String [] {Integer.toString(id)});
+	}
+	
+	public boolean hasRack(int id) {
+		String[] columns={ID};
+		
+		Cursor cursor = db.query(TABLE,
+								 columns,
+								 "id = ?",
+								 new String[] {Integer.toString(id)}, 
+									null, null, null);
+
+		if (cursor.getCount() == 1) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	public ArrayList<Integer> getRackIds() {

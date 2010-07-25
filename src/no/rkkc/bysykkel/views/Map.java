@@ -28,15 +28,17 @@ import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
-import no.rkkc.bysykkel.db.DbAdapter;
 import no.rkkc.bysykkel.db.RackDbAdapter;
 import no.rkkc.bysykkel.model.Rack;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.Intent;
+import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -49,8 +51,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -78,7 +78,7 @@ public class Map extends MapActivity {
 	GeoPoint savedLocation;
 	int savedZoomLevel;
 	
-	static final int DIALOG_DBINIT = 0; // Progressbar when initializing the database the first time the app is run.
+	static final int DIALOG_RACKSYNC = 0; // Progressbar when initializing the database the first time the app is run.
 	static final int DIALOG_SEARCHING_BIKE = 1; // Progressbar when searching for ready bikes
 	static final int DIALOG_SEARCHING_SLOT = 2; // Progressbar when searching for free slots
 	static final int DIALOG_COMMUNICATION_ERROR = 3; // Something has failed during communication with servers
@@ -106,24 +106,31 @@ public class Map extends MapActivity {
 
         db = (RackDbAdapter) new RackDbAdapter(Map.this).open();
         osloCityBikeAdapter = new OsloCityBikeAdapter();
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 
-        if (!isFirstRun()) {
-        	requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-        	setProgressBarIndeterminateVisibility(true);
-        }
-        
         setContentView(R.layout.main);
         setupMapView();
         setupInfoPanel();
         setupMyLocation(savedInstanceState);
-    	
+
         if (isFirstRun()) {
-        	setupFirstRun();
+    		new RackSyncTask().execute((Void[])null);
+        	showOsloOverview();
         } else {
+        	setProgressBarIndeterminateVisibility(true);
         	initializeMap();
         	setProgressBarIndeterminateVisibility(false);
         }
     }
+
+	private boolean isFirstRun() {
+		SharedPreferences settings = getPreferences(MODE_PRIVATE);
+		if (settings.getLong("racksUpdatedTime", -1) == -1) {
+			return true;
+		} 
+		
+		return false;
+	}
 
 	private void setupMapView() {
 	    // Set up map view
@@ -165,40 +172,7 @@ public class Map extends MapActivity {
 		}
 	}
     
-    /**
-     * Checks if this is the first time the app has been run.
-     * 
-     * @return boolean
-     */
-    private boolean isFirstRun() {
-    	if (!db.hasRackData()) {
-    		return true;
-    	} else {
-    		return false;
-    	}
-    }
     
-	/**
-	 * Initialize default location + zoom for user interface, and retrieve info on all racks and save in database. 
-	 */
-	private void setupFirstRun() {
-		showDialog(DIALOG_DBINIT);
-			
-		new Thread(new Runnable(){
-			public void run() {
-				Looper.prepare();
-
-				showOsloOverview();
-					
-				initializeDb(db);
-				dismissDialog(DIALOG_DBINIT);
-				
-        		initializeMap();
-			}
-
-			}).start();
-	}
-
 	/**
 	 * Display overview of Oslo. Used when no fix before GPS/GSM has been acquired.
 	 */
@@ -234,23 +208,6 @@ public class Map extends MapActivity {
 		return rackOverlay;
 	}
 
-	/**
-	 * On first run, populate the database with rack information
-	 * 
-	 * @param db
-	 * @param ocbAdapter
-	 */
-	private void initializeDb(DbAdapter db) {
-		ArrayList<Integer> rackIds = new ArrayList<Integer>();
-		try {
-			rackIds = osloCityBikeAdapter.getRacks();
-			addRacksToDb(rackIds);
-		} catch (OsloCityBikeException e) {
-			Log.e("FetchRackData", "Communication with ClearChannel failed.", e);
-			// TODO: Show error dialog to user?		
-		}
-	}
-    
     @Override
     protected void onRestart() {
     	super.onRestart();
@@ -266,7 +223,6 @@ public class Map extends MapActivity {
     protected void onResume() {
     	super.onResume();
     	myLocation.enableMyLocation();
-//    	animateToMyLocation();
     }
     
     @Override
@@ -300,10 +256,14 @@ public class Map extends MapActivity {
     @Override
     protected Dialog onCreateDialog(int id) {
     	switch (id) {
-    		case DIALOG_DBINIT:
+    		case DIALOG_RACKSYNC:
     			ProgressDialog initDialog = new ProgressDialog(this);
-    			initDialog.setTitle(getString(R.string.initdialog_title));
-    			initDialog.setMessage(getString(R.string.initdialog_message));
+    			if (isFirstRun()) {
+    				initDialog.setTitle(getString(R.string.syncdialog_title_init));
+    			} else {
+    				initDialog.setTitle(getString(R.string.syncdialog_title));
+    			}
+    			initDialog.setMessage(getString(R.string.syncdialog_message));
     			initDialog.setIndeterminate(true);
     			initDialog.setCancelable(false);
     			
@@ -326,43 +286,11 @@ public class Map extends MapActivity {
     			slotSearchDialog.setCancelable(true);
     			
     			return slotSearchDialog;
-//    			
-//    		case DIALOG_COMMUNICATION_ERROR:
-//    			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//    			builder.setTitle("Kommunikasjonsfeil");
-//    			builder.setMessage("Kommunikasjon med ClearChannels servere har feilet. Forsøk igjen.");
-//    			builder.setPositiveButton("OK", null);
-//    			builder.setCancelable(false);
-//    			
-//    			return builder.create();
     	}
     	
     	return super.onCreateDialog(id);
     }
     
-
-	/**
-	 * @param db
-	 * @param ocbAdapter
-	 * @param rackIds
-	 * @throws Exception 
-	 */
-	private void addRacksToDb(ArrayList<Integer> rackIds) throws OsloCityBikeException {
-		// Add racks to database
-		for (Integer rackId : rackIds) {
-			Rack rack;
-			try {
-				Log.v(TAG, "Inserting rack into DB. ID: ".concat(rackId.toString()));
-				rack = osloCityBikeAdapter.getRack(rackId);
-				db.insertRack(rack);
-			} catch (OsloCityBikeException e) {
-				Log.e(TAG, e.getStackTrace().toString());
-				db.clearRacks(); // Remove rack data from database, so that db-initialization is retried on next startup.
-				// TODO: Show a dialog informing the user of the error in stead of rethrowing?
-				throw e;
-			}
-		}
-	}
 
 	@Override
 	protected boolean isRouteDisplayed() {
@@ -458,6 +386,9 @@ public class Map extends MapActivity {
 		    case R.id.my_location:
 		    	animateToMyLocation();
 		        return true;
+		    case R.id.rack_sync:
+		    	new RackSyncTask().execute((Void[])null);
+		    	return true;
 //		    case R.id.favorites:
 //		    	startActivity(new Intent(this, Favorites.class));
 //		    	return true;
@@ -770,6 +701,108 @@ public class Map extends MapActivity {
 			// This should never occur
 			throw new NoSuchElementException("Overlay with rack " + rackId
 					+ " doesn't exists");
+		}
+	}
+	
+	
+	/**
+	 * Task responsible for inserting/updating all racks according to information retrieved
+	 * from the Clear Channel servers. 
+	 *
+	 */
+	private class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
+		private ArrayList<Integer> failedRackIds = new ArrayList<Integer>();
+		
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			showDialog(DIALOG_RACKSYNC);
+		}
+
+		@Override
+		protected void onPostExecute(Boolean result) {
+			super.onPostExecute(result);
+			initializeMap();
+			dismissDialog(DIALOG_RACKSYNC);
+			if (!result) {
+           		AlertDialog.Builder builder = new AlertDialog.Builder(Map.this);
+    			builder.setMessage("En feil oppsto under oppdateringen. Du kan oppdatere stativene senere, eller forsøke på nytt nå.")
+    			       .setCancelable(false)
+    			       .setPositiveButton("Forsøk igjen", new DialogInterface.OnClickListener() {
+    			           public void onClick(DialogInterface dialog, int id) {
+    			                new RackSyncTask().execute((Void [])null);
+    			           }
+    			       })
+    			       .setNeutralButton("Senere", new DialogInterface.OnClickListener() {
+    			           public void onClick(DialogInterface dialog, int id) {
+    			                dialog.cancel();
+    			           }
+    			       });
+    			builder.create().show();
+			}
+			saveRackUpdatePreference();
+		}
+
+		@Override
+		protected Boolean doInBackground(Void... arg0) {
+			OsloCityBikeAdapter osloCityBikeAdapter = new OsloCityBikeAdapter();
+			ArrayList<Integer> localRackIds = db.getRackIds();
+
+			try {
+				ArrayList<Integer> remoteRackIds = osloCityBikeAdapter.getRacks();
+				
+				// Delete racks in DB that are not returned from server
+				if (remoteRackIds.size() > 100) {// Safeguard, in case Clear Channel returns empty list
+					for (Integer rackId : localRackIds) {
+						if (!remoteRackIds.contains(rackId)) {
+							Log.v(TAG, "Deleting rack with ID ".concat(Integer.toString(rackId)).concat(", as it was not returned by server."));
+							db.deleteRack(rackId);
+						}
+					}
+				}
+				
+				// Update or insert racks returned from server
+				Rack remoteRack;
+				Rack localRack;
+				for (int rackId: remoteRackIds) {
+					try {
+						remoteRack = osloCityBikeAdapter.getRack(rackId);
+					} catch (OsloCityBikeException e) {
+						// TODO: Store info about the rack id?
+						failedRackIds.add(rackId);
+						continue;
+					}
+					if (db.hasRack(rackId)) {
+						// Update
+						localRack = db.getRack(rackId);
+						localRack.setDescription(remoteRack.getDescription());
+						localRack.setLocation(remoteRack.getLocation());
+						
+						db.updateOrInsertRack(localRack);
+					} else {
+						// Insert
+						db.updateOrInsertRack(remoteRack);
+					}
+				}
+			} catch (OsloCityBikeAdapter.OsloCityBikeCommunicationException e) {
+				return false;
+			}
+			
+			if (failedRackIds.size() > 0) {
+				Log.v(TAG, "test");
+				return false;
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Saves current time in the preferences, to keep track of when the racks list was last
+		 * updated
+		 */
+		private void saveRackUpdatePreference() {
+			SharedPreferences settings = getPreferences(MODE_PRIVATE);
+			settings.edit().putLong("racksUpdatedTime", System.currentTimeMillis()).commit();
 		}
 	}
 	

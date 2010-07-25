@@ -80,6 +80,10 @@ public class Rack {
 	public String getDescription() {
 		return description;
 	}
+	
+	public void setDescription(String description) {
+		this.description = description; 
+	}
 
 	public boolean hasLocationInfo() {
 		return (location == null) ? false : true;
@@ -87,6 +91,14 @@ public class Rack {
 	
 	public GeoPoint getLocation() {
 		return location;
+	}
+	
+	public void setLocation(GeoPoint location) {
+		this.location = location;
+	}
+	
+	public void setLocation(int latitude, int longitude) {
+		this.location = new GeoPoint(latitude, longitude);
 	}
 	
 	public boolean hasBikeAndSlotInfo() {
