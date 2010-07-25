@@ -7,8 +7,6 @@
     <string name="word_slot">lås</string>
 	<string name="word_slots">låser</string>
 	
-	<string name="syncdialog_title_init">Første oppstart</string>
-	<string name="syncdialog_title">Oppdaterer stativer</string>
 	<string name="syncdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
 	
 	<string name="searchdialog_title">Søker</string>

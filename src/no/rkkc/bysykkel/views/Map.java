@@ -115,6 +115,7 @@ public class Map extends MapActivity {
 
         if (isFirstRun()) {
     		new RackSyncTask().execute((Void[])null);
+    		Log.v("Test", "bla");
         	showOsloOverview();
         } else {
         	setProgressBarIndeterminateVisibility(true);
@@ -258,11 +259,6 @@ public class Map extends MapActivity {
     	switch (id) {
     		case DIALOG_RACKSYNC:
     			ProgressDialog initDialog = new ProgressDialog(this);
-    			if (isFirstRun()) {
-    				initDialog.setTitle(getString(R.string.syncdialog_title_init));
-    			} else {
-    				initDialog.setTitle(getString(R.string.syncdialog_title));
-    			}
     			initDialog.setMessage(getString(R.string.syncdialog_message));
     			initDialog.setIndeterminate(true);
     			initDialog.setCancelable(false);
