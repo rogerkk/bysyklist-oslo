@@ -24,8 +24,13 @@
 	<string name="menu_update_rack_db">Oppdater stativer</string>
 	<string name="menu_nearest_bike">Nærmeste sykkel</string>
 	<string name="menu_nearest_slot">Nærmeste lås</string>
-	<string name="menu_favorites">Favoritter</string>
+	
+	<string name="about_app">Om Bysyklist Oslo</string>
 	
 	<string name="error_search_failed">En feil oppsto under søket.</string>
 	<string name="error_communication_failed">Feil under kommunikasjon med ClearChannel.</string>
+	
+	<string name="content_about">Bysyklist Oslo er utviklet av Roger Kristiansen. Ikonet med den syklende androiden er laget av Alexey Novoselov (<a href="http://www.behance.net/NoavArt">www.behance.net/NoavArt</a>).\n\nFeilrapporter, kodebidrag eller annen tilbakemelding tas imot med takk på <a href="mailto:roger@kind-kristiansen.no">epost</a>.\n\nApplikasjonen er fri programvare, lisensiert under GPL v3. Kildekoden er gjort tilgjengelig <a href="http://gitorious.org/bysyklist">her</a>\n\nHverken utvikleren eller applikasjonen er på noen måte tilknyttet Clear Channel.</string>
+	
+	<string name="content_help"></string>
 </resources>

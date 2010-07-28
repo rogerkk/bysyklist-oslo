@@ -35,6 +35,7 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.DialogInterface.OnClickListener;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -43,6 +44,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -82,6 +84,7 @@ public class Map extends MapActivity {
 	static final int DIALOG_SEARCHING_BIKE = 1; // Progressbar when searching for ready bikes
 	static final int DIALOG_SEARCHING_SLOT = 2; // Progressbar when searching for free slots
 	static final int DIALOG_COMMUNICATION_ERROR = 3; // Something has failed during communication with servers
+	static final int DIALOG_ABOUT = 4;
 	
 	private static final String TAG = "Bysyklist-Map";
 	
@@ -255,40 +258,6 @@ public class Map extends MapActivity {
     }
     
     @Override
-    protected Dialog onCreateDialog(int id) {
-    	switch (id) {
-    		case DIALOG_RACKSYNC:
-    			ProgressDialog initDialog = new ProgressDialog(this);
-    			initDialog.setMessage(getString(R.string.syncdialog_message));
-    			initDialog.setIndeterminate(true);
-    			initDialog.setCancelable(false);
-    			
-    			return initDialog;
-    		case DIALOG_SEARCHING_BIKE:
-    			ProgressDialog bikeSearchDialog = new ProgressDialog(this);
-    			String message = String.format(getString(R.string.searchdialog_message_first), 
-    					getString(R.string.word_bike));
-    			bikeSearchDialog.setMessage(message);
-    			bikeSearchDialog.setIndeterminate(true);
-    			bikeSearchDialog.setCancelable(true);
-    			
-    			return bikeSearchDialog;
-    		case DIALOG_SEARCHING_SLOT:
-    			ProgressDialog slotSearchDialog = new ProgressDialog(this);
-    			String slotMessage = String.format(getString(R.string.searchdialog_message_first), 
-    					getString(R.string.word_slot));
-    			slotSearchDialog.setMessage(slotMessage);
-    			slotSearchDialog.setIndeterminate(true);
-    			slotSearchDialog.setCancelable(true);
-    			
-    			return slotSearchDialog;
-    	}
-    	
-    	return super.onCreateDialog(id);
-    }
-    
-
-	@Override
 	protected boolean isRouteDisplayed() {
 		return false;
 	}
@@ -351,6 +320,54 @@ public class Map extends MapActivity {
 		contextMenuLocation.setLongitude(point.getLongitudeE6() / 1E6);    
 	}
 	
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		switch (id) {
+			case DIALOG_RACKSYNC:
+				ProgressDialog initDialog = new ProgressDialog(this);
+				initDialog.setMessage(getString(R.string.syncdialog_message));
+				initDialog.setIndeterminate(true);
+				initDialog.setCancelable(false);
+				
+				return initDialog;
+			case DIALOG_SEARCHING_BIKE:
+				ProgressDialog bikeSearchDialog = new ProgressDialog(this);
+				String message = String.format(getString(R.string.searchdialog_message_first), 
+						getString(R.string.word_bike));
+				bikeSearchDialog.setMessage(message);
+				bikeSearchDialog.setIndeterminate(true);
+				bikeSearchDialog.setCancelable(true);
+				
+				return bikeSearchDialog;
+			case DIALOG_SEARCHING_SLOT:
+				ProgressDialog slotSearchDialog = new ProgressDialog(this);
+				String slotMessage = String.format(getString(R.string.searchdialog_message_first), 
+						getString(R.string.word_slot));
+				slotSearchDialog.setMessage(slotMessage);
+				slotSearchDialog.setIndeterminate(true);
+				slotSearchDialog.setCancelable(true);
+				
+				return slotSearchDialog;
+			case DIALOG_ABOUT:
+				View view = View.inflate(Map.this, R.layout.scrollable_textview, null);
+				TextView textView = (TextView) view.findViewById(R.id.message);
+				textView.setMovementMethod(LinkMovementMethod.getInstance());
+				textView.setText(R.string.content_about);
+				
+				AlertDialog.Builder builder = new AlertDialog.Builder(this);
+				builder.setView(view)
+						.setTitle(getString(R.string.about_app))
+						.setNeutralButton("Lukk", new OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							dialog.cancel();
+						}
+					   });
+				builder.create().show();
+		}
+		
+		return super.onCreateDialog(id);
+	}
+
 	public void onCreateContextMenu(ContextMenu  menu, View  v, ContextMenu.ContextMenuInfo  menuInfo) {
 		menu.add(Menu.NONE, Menu.FIRST, Menu.NONE, getString(R.string.menu_nearest_bike));
 		menu.add(Menu.NONE, Menu.FIRST+1, Menu.NONE, getString(R.string.menu_nearest_slot));
@@ -379,21 +396,20 @@ public class Map extends MapActivity {
 	/* Handles menu item selections */
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    switch (item.getItemId()) { 
-		    case R.id.my_location:
+		    case R.id.menuitem_my_location:
 		    	animateToMyLocation();
 		        return true;
-		    case R.id.rack_sync:
+		    case R.id.menuitem_rack_sync:
 		    	new RackSyncTask().execute((Void[])null);
 		    	return true;
-//		    case R.id.favorites:
-//		    	startActivity(new Intent(this, Favorites.class));
-//		    	return true;
-		    case R.id.nearest_bike:
+		    case R.id.menuitem_nearest_bike:
 		    	searchForClosestRack(myLocation.getLastFix(), FindRackCriteria.ReadyBike);
 				return true;
-		    case R.id.nearest_slot:
+		    case R.id.menuitem_nearest_slot:
 		    	searchForClosestRack(myLocation.getLastFix(), FindRackCriteria.FreeSlot);
 				return true;
+		    case R.id.menuitem_about:
+		    	showDialog(DIALOG_ABOUT);
 	    }
 	    return false;
 	}
