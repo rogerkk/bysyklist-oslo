@@ -26,6 +26,7 @@ import java.util.NoSuchElementException;
 import no.rkkc.bysykkel.LongpressHelper;
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
+import no.rkkc.bysykkel.Toaster;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import no.rkkc.bysykkel.db.RackDbAdapter;
@@ -41,9 +42,9 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -74,7 +75,7 @@ public class Map extends MapActivity {
 	private ViewHolder viewHolder = new ViewHolder();
 	private RacksOverlay rackOverlay; 
 	
-	private Location contextMenuLocation = new Location("Longpress");
+	private GeoPoint contextMenuGeoPoint = null;
 	private LongpressHelper contextMenuHelper = new LongpressHelper();
 	
 	GeoPoint savedLocation;
@@ -87,20 +88,6 @@ public class Map extends MapActivity {
 	static final int DIALOG_ABOUT = 4;
 	
 	private static final String TAG = "Bysyklist-Map";
-	
-	Handler toastHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			Toast.makeText(getBaseContext(), msg.getData().getString("text"), msg.getData().getInt("time")).show();
-		}
-	};
-	
-	Handler contextMenuHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			mapView.showContextMenu();
-		}
-	};
 	
     /** Called when the activity is first created. */
     @Override
@@ -290,18 +277,7 @@ public class Map extends MapActivity {
 	private void catchLongPress(MotionEvent event) {
 		if (event.getAction() == MotionEvent.ACTION_DOWN) { // New touch has been detected
 			final MotionEvent touchEvent = event;
-			new Thread(new Runnable(){
-				public void run() {
-					Looper.prepare();
-					if (contextMenuHelper.isLongPressDetected()) {
-						// Store event location for usage by context menu actions
-						storeEventLocationForContextMenu(touchEvent);
-						
-						// Show the context menu
-						contextMenuHandler.sendEmptyMessage(0);
-					}
-				}
-				}).start();
+			new Thread(new LongpressDetector(touchEvent)).start();
 		} else {
 			contextMenuHelper.handleMotionEvent(event);
 		}
@@ -313,11 +289,11 @@ public class Map extends MapActivity {
 	 * @param event
 	 */
 	private void storeEventLocationForContextMenu(MotionEvent event) {
-		GeoPoint point = mapView.getProjection().fromPixels((int)event.getX(), 
+		contextMenuGeoPoint = mapView.getProjection().fromPixels((int)event.getX(), 
 				(int)event.getY());
 	
-		contextMenuLocation.setLatitude(point.getLatitudeE6() / 1E6);
-		contextMenuLocation.setLongitude(point.getLongitudeE6() / 1E6);    
+		
+	    
 	}
 	
 	@Override
@@ -376,10 +352,10 @@ public class Map extends MapActivity {
 	public boolean onContextItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case Menu.FIRST:
-				searchForClosestRack(contextMenuLocation, FindRackCriteria.ReadyBike);
+				displayClosestRack(FindRackCriteria.ReadyBike, contextMenuGeoPoint);
 				return true;
 			case Menu.FIRST+1:
-				searchForClosestRack(contextMenuLocation, FindRackCriteria.FreeSlot);
+				displayClosestRack(FindRackCriteria.FreeSlot, contextMenuGeoPoint);
 				return true;
 		}
 			
@@ -403,10 +379,10 @@ public class Map extends MapActivity {
 		    	new RackSyncTask().execute((Void[])null);
 		    	return true;
 		    case R.id.menuitem_nearest_bike:
-		    	searchForClosestRack(myLocation.getLastFix(), FindRackCriteria.ReadyBike);
+				displayClosestRack(FindRackCriteria.ReadyBike);
 				return true;
 		    case R.id.menuitem_nearest_slot:
-		    	searchForClosestRack(myLocation.getLastFix(), FindRackCriteria.FreeSlot);
+		    	displayClosestRack(FindRackCriteria.FreeSlot);
 				return true;
 		    case R.id.menuitem_about:
 		    	showDialog(DIALOG_ABOUT);
@@ -417,97 +393,44 @@ public class Map extends MapActivity {
 	/**
 	 * 
 	 */
-	private void animateToMyLocation() {
-		GeoPoint point = myLocation.getMyLocation();
-		if (point != null) {
-			mapController.animateTo(point);
-		}
-	}
-	
-	/**
-	 * Retrieves the closest rack according to criteria and modifies UI accordingly
-	 * 
-	 * @param criteria
-	 */
-	public void searchForClosestRack(final Location searchLocation, final FindRackCriteria criteria) {
-		
-		// TODO: Dialog-related, should be cleaned up
-		final Handler mDialogHandler = new Handler() {
-			@Override
-			public void handleMessage(Message msg) {
-				final int dialog;
-				if (criteria == FindRackCriteria.FreeSlot) {
-					dialog = DIALOG_SEARCHING_SLOT;
-				} else {
-					dialog = DIALOG_SEARCHING_BIKE;
-				}
-				
-				if (msg.getData().getBoolean("show")) {
-					showDialog(dialog);
-				} else {
-					dismissDialog(dialog);
-				}
-			}
-		};
-		
-		/* 
-		 * Reset screen to just show map. No rack info or highlighting before the following search
-		 * is done.
-		*/
+	private void displayClosestRack(final FindRackCriteria criteria, final GeoPoint geoPoint) {
 		hideRackInfo();
 		rackOverlay.resetHighlighting();
 		
-		new Thread(new Runnable(){
+		new Thread(new Runnable() {
 			public void run() {
-				Looper.prepare();
+				GeoPoint searchPoint;
+				if (geoPoint == null) {
+					searchPoint = getMyCurrentLocation();
+					if (searchPoint == null) return;
+				} else {
+					searchPoint = geoPoint;
+				}
 				
-				// Show progress dialog
-				Message msg = mDialogHandler.obtainMessage();
-				Bundle bundle = new Bundle();
-				bundle.putBoolean("show", true);
-				msg.setData(bundle);
-				mDialogHandler.sendMessage(msg);
-				
-				Rack nearestRackWithSlotOrBike = findClosestRack(searchLocation, criteria);
-				
-				// Hide progress dialog
-				msg = mDialogHandler.obtainMessage();
-				bundle = new Bundle();
-				bundle.putBoolean("hide", true);
-				msg.setData(bundle);
-				mDialogHandler.sendMessage(msg);
-				
-				if (nearestRackWithSlotOrBike == null) {
-					Log.w(Map.TAG, "Could not find nearest rack during search");
-					
-					// Show toast informing of the error
-					msg = toastHandler.obtainMessage();
-					bundle = new Bundle();
-					bundle.putString("text", getText(R.string.error_search_failed).toString());
-					bundle.putInt("time", Toast.LENGTH_SHORT);
-					msg.setData(bundle);
-					toastHandler.sendMessage(msg);
-					
+				Rack closestRack = getClosestRack(searchPoint, criteria);
+				if (closestRack == null) {
+					Toaster.toast(Map.this, R.string.error_search_failed, Toast.LENGTH_SHORT);
 					return;
 				}
-
-				RacksOverlay overlay = ((RacksOverlay) mapView.getOverlays().get(1));
 				
-				overlay.highlightRack(nearestRackWithSlotOrBike.getId());
+				highlightRack(closestRack.getId(), 3000);
+				animateToRack(closestRack);
 				
-				mapController.animateTo(nearestRackWithSlotOrBike.getLocation());
-				
-				int noOfFreeItems;;
-				String itemType;
+				Toaster.toast(Map.this, getRackInfoText(closestRack, criteria), Toast.LENGTH_SHORT);
+			}
+			
+			private String getRackInfoText(Rack rack, FindRackCriteria criteria) {
+				final int noOfFreeItems;;
+				final String itemType;
 				if (criteria == FindRackCriteria.FreeSlot) {
-					noOfFreeItems = nearestRackWithSlotOrBike.getNumberOfEmptySlots();
+					noOfFreeItems = rack.getNumberOfEmptySlots();
 					if (noOfFreeItems > 1) {
 						itemType = getText(R.string.word_slots).toString();
 					} else {
 						itemType = getText(R.string.word_slot).toString();
 					}
 				} else {
-					noOfFreeItems = nearestRackWithSlotOrBike.getNumberOfReadyBikes();
+					noOfFreeItems = rack.getNumberOfReadyBikes();
 					if (noOfFreeItems > 1) {
 						itemType = getText(R.string.word_bikes).toString();
 					} else {
@@ -515,41 +438,87 @@ public class Map extends MapActivity {
 					}
 				}
 				
-				// Show toast informing of number of free bikes/slots
-				msg = toastHandler.obtainMessage();
-				bundle = new Bundle();
-				bundle.putString("text", Integer.toString(noOfFreeItems) + " " + itemType); // A message like "x free slot(s)"
-				bundle.putInt("time", Toast.LENGTH_SHORT);
-				msg.setData(bundle);
-				toastHandler.sendMessage(msg);
-
-				try {
-					Thread.sleep(3000);
-				} catch (InterruptedException e) {
-					// Don't do anything. The finally-clause will revert to previous state anyway.
-				} finally {
-					overlay.resetHighlighting();
-					mapView.postInvalidate();
-				}
-				Looper.loop();
+				return Integer.toString(noOfFreeItems) + " " + itemType;
 			}
-			}).start();		
+		}).start();
 	}
 	
-	public Rack findClosestRack(Location searchLocation, FindRackCriteria criteria) {
-		// TODO: Do we want to provide closest station from currently centered, or perhaps from a longpress?
+	private void displayClosestRack(final FindRackCriteria criteria) {
+		displayClosestRack(criteria, null);
+	}
+	
+	/**
+	 * @param closestRackWithSlotOrBike
+	 */
+	private void animateToRack(Rack closestRackWithSlotOrBike) {
+		mapController.animateTo(closestRackWithSlotOrBike.getLocation());
+	}
+
+	/**
+	 * 
+	 */
+	private void animateToMyLocation() {
+		new Thread(new Runnable(){
+			public void run() {
+				 Looper.prepare();
+				
+				GeoPoint location = getMyCurrentLocation();
+				
+				if (location != null) {
+					mapController.animateTo(location);
+				}
+				
+			}
+			}).start();
+	}
+	
+	
+	/**
+	 * @return
+	 */
+	private GeoPoint getMyCurrentLocation() {
+		// Times in seconds
+		int retryTime = 3;
+		int retryTimeElapsed = 0;
+		GeoPoint location = myLocation.getMyLocation();
 		
-		if (searchLocation == null) {
-			// No location has been set.
+		// If we don't have a location, try for retryTime seconds before giving up
+		while (location == null && retryTimeElapsed/20 < retryTime) {
+			if (retryTimeElapsed == 0) {
+				Toaster.toast(Map.this, R.string.location_waiting, Toast.LENGTH_SHORT);
+			}
+	
+			SystemClock.sleep(200);
+			
+			location = myLocation.getMyLocation();
+			retryTimeElapsed++;
+		}
+		
+		if (location == null) {
+			Toaster.toast(Map.this, R.string.location_not_found, Toast.LENGTH_SHORT);
+		}
+		
+		return location;
+	}
+
+	public Rack getClosestRack(GeoPoint searchPoint, FindRackCriteria criteria) {
+		if (searchPoint == null) {
+			// No location to search from was specified.
 			return null;
 		}
 		
 		List<LocationAndDistance> sortedStationLocations = new ArrayList<LocationAndDistance>();
 		for (Rack rack : db.getRacks()) {
 			Log.v(Map.TAG, rack.toString());
+			
 			Location rackLocation = new Location("Bysyklist");
 			rackLocation.setLatitude(rack.getLocation().getLatitudeE6() / 1E6);
 			rackLocation.setLongitude(rack.getLocation().getLongitudeE6() / 1E6);
+			
+			Location searchLocation = new Location("Bysyklist");
+			searchLocation.setLatitude(searchPoint.getLatitudeE6() / 1E6);
+			searchLocation.setLongitude(searchPoint.getLongitudeE6() / 1E6);
+			
 			sortedStationLocations.add(new LocationAndDistance(rack, searchLocation.distanceTo(rackLocation)));
 		}
 		Collections.sort(sortedStationLocations);
@@ -596,7 +565,59 @@ public class Map extends MapActivity {
 		}
 	}
 	
-	private static class LocationAndDistance implements Comparable<LocationAndDistance> {
+	/**
+	 * @param nearestRackWithSlotOrBike
+	 * @return
+	 */
+	public void highlightRack(Integer rackId, final Integer duration) {
+		rackOverlay.highlightRack(rackId);
+		
+		if (duration == null) {
+			return;
+		}
+
+		new Thread(new Runnable() {
+			public void run() {
+				try {
+					Thread.sleep(duration);
+				} catch (InterruptedException e) {
+					// Don't do anything. The finally-clause will revert to previous state anyway.
+				} finally {
+					rackOverlay.resetHighlighting();
+					mapView.postInvalidate();
+				}
+			}
+		});
+	}
+	
+	public void highlightRack(Integer rackId) {
+		highlightRack(rackId, null);
+	}
+	
+	private class LongpressDetector implements Runnable {
+		private final MotionEvent touchEvent;
+
+		private LongpressDetector(MotionEvent touchEvent) {
+			this.touchEvent = touchEvent;
+		}
+
+		public void run() {
+			Looper.prepare();
+			if (contextMenuHelper.isLongPressDetected()) {
+				// Store event location for usage by context menu actions
+				storeEventLocationForContextMenu(touchEvent);
+				
+				// Show the context menu
+				runOnUiThread(new Runnable() {
+					public void run() {
+						mapView.showContextMenu();								
+					}
+				});
+			}
+		}
+	}
+
+	private class LocationAndDistance implements Comparable<LocationAndDistance> {
 		private Rack rack;
 		// private Location location;
 		private float distanceInMeters;
