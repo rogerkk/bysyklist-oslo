@@ -399,15 +399,31 @@ public class Map extends MapActivity {
 		
 		new Thread(new Runnable() {
 			public void run() {
+				Looper.prepare();
+				
+				runOnUiThread(new Runnable() {
+					public void run() {
+						showDialog(DIALOG_SEARCHING_BIKE);
+					}
+				});
+
+				// Establish location to search from
 				GeoPoint searchPoint;
 				if (geoPoint == null) {
 					searchPoint = getMyCurrentLocation();
-					if (searchPoint == null) return;
+
+					if (searchPoint == null) {
+						dismissDialog(DIALOG_SEARCHING_BIKE);
+						return;
+					}
 				} else {
 					searchPoint = geoPoint;
 				}
 				
 				Rack closestRack = getClosestRack(searchPoint, criteria);
+				dismissDialog(DIALOG_SEARCHING_BIKE);
+
+				// No rack found. Inform user
 				if (closestRack == null) {
 					Toaster.toast(Map.this, R.string.error_search_failed, Toast.LENGTH_SHORT);
 					return;
@@ -416,9 +432,17 @@ public class Map extends MapActivity {
 				highlightRack(closestRack.getId(), 3000);
 				animateToRack(closestRack);
 				
+				// Show stats for the closest rack
 				Toaster.toast(Map.this, getRackInfoText(closestRack, criteria), Toast.LENGTH_SHORT);
 			}
 			
+			/**
+			 * Constructs string that is to be displayed to user when rack with bikes or free locks has been found
+			 * 
+			 * @param rack
+			 * @param criteria
+			 * @return
+			 */
 			private String getRackInfoText(Rack rack, FindRackCriteria criteria) {
 				final int noOfFreeItems;;
 				final String itemType;
@@ -477,11 +501,22 @@ public class Map extends MapActivity {
 	 * @return
 	 */
 	private GeoPoint getMyCurrentLocation() {
-		// Times in seconds
-		int retryTime = 3;
-		int retryTimeElapsed = 0;
-		GeoPoint location = myLocation.getMyLocation();
+		Location lastFix = myLocation.getLastFix();
+
+		GeoPoint location;
+		if (lastFix != null) {
+			Log.d(Map.TAG, "Using last known location");
+			location = new GeoPoint((int)(lastFix.getLatitude()*1E6), 
+												(int)(lastFix.getLongitude()*1E6));
+		} else {
+			Log.d(Map.TAG, "Using fresh location fix");
+			location = myLocation.getMyLocation();
+		}
 		
+		// Times in seconds
+		int retryTime = 10;
+		int retryTimeElapsed = 0;
+
 		// If we don't have a location, try for retryTime seconds before giving up
 		while (location == null && retryTimeElapsed/20 < retryTime) {
 			if (retryTimeElapsed == 0) {
