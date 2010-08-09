@@ -400,9 +400,14 @@ public class Map extends MapActivity {
 			public void run() {
 				Looper.prepare();
 				
+				// Open progress dialog
 				runOnUiThread(new Runnable() {
 					public void run() {
-						showDialog(DIALOG_SEARCHING_BIKE);
+						if (criteria == FindRackCriteria.ReadyBike) {
+							showDialog(DIALOG_SEARCHING_BIKE);
+						} else {
+							showDialog(DIALOG_SEARCHING_SLOT);
+						}
 					}
 				});
 
@@ -826,7 +831,6 @@ public class Map extends MapActivity {
 					try {
 						remoteRack = osloCityBikeAdapter.getRack(rackId);
 					} catch (OsloCityBikeException e) {
-						// TODO: Store info about the rack id?
 						failedRackIds.add(rackId);
 						continue;
 					}

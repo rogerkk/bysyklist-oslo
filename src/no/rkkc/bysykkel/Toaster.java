@@ -43,7 +43,5 @@ public class Toaster implements Runnable {
 
 	public void run() {
 		Toast.makeText(context, message, duration).show();
-		// TODO Auto-generated method stub
-		
 	}
 }
