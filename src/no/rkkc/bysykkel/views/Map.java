@@ -114,92 +114,7 @@ public class Map extends MapActivity {
         }
     }
 
-	private boolean isFirstRun() {
-		SharedPreferences settings = getPreferences(MODE_PRIVATE);
-		if (settings.getLong("racksUpdatedTime", -1) == -1) {
-			return true;
-		} 
-		
-		return false;
-	}
-
-	private void setupMapView() {
-	    // Set up map view
-	    mapView = (MapView)findViewById(R.id.map);
-	    mapView.setBuiltInZoomControls(true);
-	    registerForContextMenu(mapView);
-	    mapController = mapView.getController();
-	}
-	
-	private void setupInfoPanel() {
-		viewHolder.infoPanel = (RackInfoPanel) findViewById(R.id.infoPanel);
-		viewHolder.infoPanel.setVisibility(View.GONE);
-	    viewHolder.name = (TextView) viewHolder.infoPanel.findViewById(R.id.name);
-	    viewHolder.information = (TextView) findViewById(R.id.information);
-	}
-
-	private void setupMyLocation(Bundle savedInstanceState) {
-		myLocation = new MyLocationOverlay(this, mapView);
-		myLocation.enableMyLocation();
-		mapView.getOverlays().add(myLocation);
-
-		if (savedInstanceState != null) {
-			GeoPoint point = new GeoPoint((int)savedInstanceState.getFloat("Latitude"), (int)savedInstanceState.getFloat("Longitude"));
-			mapController.setZoom(savedInstanceState.getInt("ZoomLevel"));
-			mapController.setCenter(point);
-		} else {
-	        GeoPoint recentLocation = myLocation.getMyLocation();
-			if (recentLocation != null) {
-				mapController.animateTo(recentLocation);
-			} else {
-				showOsloOverview();
-			}
-	        myLocation.runOnFirstFix(new Runnable() {
-				public void run() {
-					mapController.setZoom(16);
-					animateToMyLocation();
-				}
-	        });
-		}
-	}
-    
-    
-	/**
-	 * Display overview of Oslo. Used when no fix before GPS/GSM has been acquired.
-	 */
-	private void showOsloOverview() {
-		// Show standard location (Overview of Oslo) 
-		mapController.setZoom(13);
-		mapController.setCenter(new GeoPoint((int)(59.924653*1E6), (int) (10.731071*1E6)));
-	}
-	
-	/**
-	 * Set up the map with the overlay containing the bike rack represantions
-	 */
-    private void initializeMap() {
-    	rackOverlay = initializeRackOverlay(db.getRacks());
-		mapView.getOverlays().add(rackOverlay);  
-		mapView.postInvalidate();
-    }
-
-	/**
-	 * Initial setup of the overlay, defining the pin. 
-	 * 
-	 * @return {@link RacksOverlay}
-	 */
-	private RacksOverlay initializeRackOverlay(ArrayList<Rack> racks) {
-		Drawable default_marker = getResources().getDrawable(R.drawable.bubble);
-		default_marker.setBounds(0, 0, default_marker.getIntrinsicWidth(), default_marker
-				.getIntrinsicHeight());
-		Drawable highlighted_marker = getResources().getDrawable(R.drawable.bubble_highlighted);
-		highlighted_marker.setBounds(0, 0, highlighted_marker.getIntrinsicWidth(), highlighted_marker
-				.getIntrinsicHeight());
-		
-        RacksOverlay rackOverlay = new RacksOverlay(default_marker, highlighted_marker, racks);
-		return rackOverlay;
-	}
-
-    @Override
+	@Override
     protected void onRestart() {
     	super.onRestart();
     	db.open();
@@ -245,58 +160,6 @@ public class Map extends MapActivity {
     }
     
     @Override
-	protected boolean isRouteDisplayed() {
-		return false;
-	}
-	
-	/**
-	 * Override dispatchTouchEvent to catch a longpress anywhere on the map and display a 
-	 * context menu.
-	 * 
-	 */
-	@Override
-	public boolean dispatchTouchEvent(MotionEvent event) {
-		catchLongPress(event);
-		
-		if (event.getAction() == MotionEvent.ACTION_DOWN) {
-			hideRackInfo();
-		}
-		
-		return super.dispatchTouchEvent(event);
-	}
-
-	/**
-	 * Handles calling of the context menu, if longpress is detected on map.
-	 * 
-	 * Takes a MotionEvent as argument, and if method is not called again with an event that
-	 * indicates that this is anything but a longpress, a message is sent to display the context
-	 * menu. Any event except MotionEvent.ACTION_DOWN will reset the longpress detection.
-	 * 
-	 * @param event	as passed into dispatchTouchEvent.
-	 */
-	private void catchLongPress(MotionEvent event) {
-		if (event.getAction() == MotionEvent.ACTION_DOWN) { // New touch has been detected
-			final MotionEvent touchEvent = event;
-			new Thread(new LongpressDetector(touchEvent)).start();
-		} else {
-			contextMenuHelper.handleMotionEvent(event);
-		}
-	}
-
-	/**
-	 * Stores event location for usage by the context menu
-	 * 
-	 * @param event
-	 */
-	private void storeEventLocationForContextMenu(MotionEvent event) {
-		contextMenuGeoPoint = mapView.getProjection().fromPixels((int)event.getX(), 
-				(int)event.getY());
-	
-		
-	    
-	}
-	
-	@Override
 	protected Dialog onCreateDialog(int id) {
 		switch (id) {
 			case DIALOG_RACKSYNC:
@@ -348,7 +211,7 @@ public class Map extends MapActivity {
 		menu.add(Menu.NONE, Menu.FIRST, Menu.NONE, getString(R.string.menu_nearest_bike));
 		menu.add(Menu.NONE, Menu.FIRST+1, Menu.NONE, getString(R.string.menu_nearest_slot));
 	}
-	
+
 	public boolean onContextItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case Menu.FIRST:
@@ -361,14 +224,14 @@ public class Map extends MapActivity {
 			
 		return super.onContextItemSelected(item);
 	}
-	
+
 	/* Menu */
 	public boolean onCreateOptionsMenu(Menu menu) {
 	    MenuInflater inflater = getMenuInflater();
 	    inflater.inflate(R.menu.icon_menu, menu);
 	    return true;
 	}
-	
+
 	/* Handles menu item selections */
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    switch (item.getItemId()) { 
@@ -390,6 +253,142 @@ public class Map extends MapActivity {
 	    return false;
 	}
 
+	@Override
+	protected boolean isRouteDisplayed() {
+		return false;
+	}
+	
+	/**
+	 * Override dispatchTouchEvent to catch a longpress anywhere on the map and display a 
+	 * context menu.
+	 * 
+	 */
+	@Override
+	public boolean dispatchTouchEvent(MotionEvent event) {
+		catchLongPress(event);
+		
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			hideRackInfo();
+		}
+		
+		return super.dispatchTouchEvent(event);
+	}
+
+	private boolean isFirstRun() {
+		SharedPreferences settings = getPreferences(MODE_PRIVATE);
+		if (settings.getLong("racksUpdatedTime", -1) == -1) {
+			return true;
+		} 
+		
+		return false;
+	}
+
+	private void setupMapView() {
+	    // Set up map view
+	    mapView = (MapView)findViewById(R.id.map);
+	    mapView.setBuiltInZoomControls(true);
+	    registerForContextMenu(mapView);
+	    mapController = mapView.getController();
+	}
+
+	private void setupInfoPanel() {
+		viewHolder.infoPanel = (RackInfoPanel) findViewById(R.id.infoPanel);
+		viewHolder.infoPanel.setVisibility(View.GONE);
+	    viewHolder.name = (TextView) viewHolder.infoPanel.findViewById(R.id.name);
+	    viewHolder.information = (TextView) findViewById(R.id.information);
+	}
+
+	private void setupMyLocation(Bundle savedInstanceState) {
+		myLocation = new MyLocationOverlay(this, mapView);
+		myLocation.enableMyLocation();
+		mapView.getOverlays().add(myLocation);
+	
+		if (savedInstanceState != null) {
+			GeoPoint point = new GeoPoint((int)savedInstanceState.getFloat("Latitude"), (int)savedInstanceState.getFloat("Longitude"));
+			mapController.setZoom(savedInstanceState.getInt("ZoomLevel"));
+			mapController.setCenter(point);
+		} else {
+	        GeoPoint recentLocation = myLocation.getMyLocation();
+			if (recentLocation != null) {
+				mapController.animateTo(recentLocation);
+			} else {
+				showOsloOverview();
+			}
+	        myLocation.runOnFirstFix(new Runnable() {
+				public void run() {
+					mapController.setZoom(16);
+					animateToMyLocation();
+				}
+	        });
+		}
+	}
+
+	/**
+	 * Display overview of Oslo. Used when no fix before GPS/GSM has been acquired.
+	 */
+	private void showOsloOverview() {
+		// Show standard location (Overview of Oslo) 
+		mapController.setZoom(13);
+		mapController.setCenter(new GeoPoint((int)(59.924653*1E6), (int) (10.731071*1E6)));
+	}
+
+	/**
+	 * Set up the map with the overlay containing the bike rack represantions
+	 */
+	private void initializeMap() {
+		rackOverlay = initializeRackOverlay(db.getRacks());
+		mapView.getOverlays().add(rackOverlay);  
+		mapView.postInvalidate();
+	}
+
+	/**
+	 * Initial setup of the overlay, defining the pin. 
+	 * 
+	 * @return {@link RacksOverlay}
+	 */
+	private RacksOverlay initializeRackOverlay(ArrayList<Rack> racks) {
+		Drawable default_marker = getResources().getDrawable(R.drawable.bubble);
+		default_marker.setBounds(0, 0, default_marker.getIntrinsicWidth(), default_marker
+				.getIntrinsicHeight());
+		Drawable highlighted_marker = getResources().getDrawable(R.drawable.bubble_highlighted);
+		highlighted_marker.setBounds(0, 0, highlighted_marker.getIntrinsicWidth(), highlighted_marker
+				.getIntrinsicHeight());
+		
+	    RacksOverlay rackOverlay = new RacksOverlay(default_marker, highlighted_marker, racks);
+		return rackOverlay;
+	}
+
+	/**
+	 * Handles calling of the context menu, if longpress is detected on map.
+	 * 
+	 * Takes a MotionEvent as argument, and if method is not called again with an event that
+	 * indicates that this is anything but a longpress, a message is sent to display the context
+	 * menu. Any event except MotionEvent.ACTION_DOWN will reset the longpress detection.
+	 * 
+	 * @param event	as passed into dispatchTouchEvent.
+	 */
+	private void catchLongPress(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN) { // New touch has been detected
+			final MotionEvent touchEvent = event;
+			new Thread(new LongpressDetector(touchEvent)).start();
+		} else {
+			contextMenuHelper.handleMotionEvent(event);
+		}
+	}
+
+	/**
+	 * Stores event location for usage by the context menu
+	 * 
+	 * @param event
+	 */
+	private void storeEventLocationForContextMenu(MotionEvent event) {
+		contextMenuGeoPoint = mapView.getProjection().fromPixels((int)event.getX(), 
+				(int)event.getY());
+	
+		
+	    
+	}
+	
 	/**
 	 * 
 	 */
@@ -501,17 +500,8 @@ public class Map extends MapActivity {
 	 * @return
 	 */
 	private GeoPoint getMyCurrentLocation() {
-		Location lastFix = myLocation.getLastFix();
 
-		GeoPoint location;
-		if (lastFix != null) {
-			Log.d(Map.TAG, "Using last known location");
-			location = new GeoPoint((int)(lastFix.getLatitude()*1E6), 
-												(int)(lastFix.getLongitude()*1E6));
-		} else {
-			Log.d(Map.TAG, "Using fresh location fix");
-			location = myLocation.getMyLocation();
-		}
+		GeoPoint location = myLocation.getMyLocation();
 		
 		// Times in seconds
 		int retryTime = 10;
