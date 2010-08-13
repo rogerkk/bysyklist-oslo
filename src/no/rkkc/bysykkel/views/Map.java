@@ -215,10 +215,10 @@ public class Map extends MapActivity {
 	public boolean onContextItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case Menu.FIRST:
-				displayClosestRack(FindRackCriteria.ReadyBike, contextMenuGeoPoint);
+				new ShowNearestRackTask(FindRackCriteria.ReadyBike, contextMenuGeoPoint).execute();
 				return true;
 			case Menu.FIRST+1:
-				displayClosestRack(FindRackCriteria.FreeSlot, contextMenuGeoPoint);
+				new ShowNearestRackTask(FindRackCriteria.FreeSlot, contextMenuGeoPoint).execute();
 				return true;
 		}
 			
@@ -242,10 +242,10 @@ public class Map extends MapActivity {
 		    	new RackSyncTask().execute((Void[])null);
 		    	return true;
 		    case R.id.menuitem_nearest_bike:
-				displayClosestRack(FindRackCriteria.ReadyBike);
+				new ShowNearestRackTask(FindRackCriteria.ReadyBike).execute();
 				return true;
 		    case R.id.menuitem_nearest_slot:
-		    	displayClosestRack(FindRackCriteria.FreeSlot);
+		    	new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
 				return true;
 		    case R.id.menuitem_about:
 		    	showDialog(DIALOG_ABOUT);
@@ -387,92 +387,6 @@ public class Map extends MapActivity {
 	
 		
 	    
-	}
-	
-	/**
-	 * 
-	 */
-	private void displayClosestRack(final FindRackCriteria criteria, final GeoPoint geoPoint) {
-		hideRackInfo();
-		rackOverlay.resetHighlighting();
-		
-		new Thread(new Runnable() {
-			public void run() {
-				Looper.prepare();
-				
-				// Open progress dialog
-				runOnUiThread(new Runnable() {
-					public void run() {
-						if (criteria == FindRackCriteria.ReadyBike) {
-							showDialog(DIALOG_SEARCHING_BIKE);
-						} else {
-							showDialog(DIALOG_SEARCHING_SLOT);
-						}
-					}
-				});
-
-				// Establish location to search from
-				GeoPoint searchPoint;
-				if (geoPoint == null) {
-					searchPoint = getMyCurrentLocation();
-
-					if (searchPoint == null) {
-						dismissDialog(DIALOG_SEARCHING_BIKE);
-						return;
-					}
-				} else {
-					searchPoint = geoPoint;
-				}
-				
-				Rack closestRack = getClosestRack(searchPoint, criteria);
-				dismissDialog(DIALOG_SEARCHING_BIKE);
-
-				// No rack found. Inform user
-				if (closestRack == null) {
-					Toaster.toast(Map.this, R.string.error_search_failed, Toast.LENGTH_SHORT);
-					return;
-				}
-				
-				highlightRack(closestRack.getId(), 3000);
-				animateToRack(closestRack);
-				
-				// Show stats for the closest rack
-				Toaster.toast(Map.this, getRackInfoText(closestRack, criteria), Toast.LENGTH_SHORT);
-			}
-			
-			/**
-			 * Constructs string that is to be displayed to user when rack with bikes or free locks has been found
-			 * 
-			 * @param rack
-			 * @param criteria
-			 * @return
-			 */
-			private String getRackInfoText(Rack rack, FindRackCriteria criteria) {
-				final int noOfFreeItems;;
-				final String itemType;
-				if (criteria == FindRackCriteria.FreeSlot) {
-					noOfFreeItems = rack.getNumberOfEmptySlots();
-					if (noOfFreeItems > 1) {
-						itemType = getText(R.string.word_slots).toString();
-					} else {
-						itemType = getText(R.string.word_slot).toString();
-					}
-				} else {
-					noOfFreeItems = rack.getNumberOfReadyBikes();
-					if (noOfFreeItems > 1) {
-						itemType = getText(R.string.word_bikes).toString();
-					} else {
-						itemType = getText(R.string.word_bike).toString();
-					}
-				}
-				
-				return Integer.toString(noOfFreeItems) + " " + itemType;
-			}
-		}).start();
-	}
-	
-	private void displayClosestRack(final FindRackCriteria criteria) {
-		displayClosestRack(criteria, null);
 	}
 	
 	/**
@@ -767,6 +681,104 @@ public class Map extends MapActivity {
 		}
 	}
 	
+		private class ShowNearestRackTask extends AsyncTask<Object, Void, Void> {
+		int dialogId;
+		FindRackCriteria criteria;
+		GeoPoint geoPoint;
+		Rack nearestRack;
+		
+		public ShowNearestRackTask(FindRackCriteria criteria, GeoPoint geoPoint) {
+			super();
+			
+			if (criteria == FindRackCriteria.ReadyBike) {
+				this.dialogId = DIALOG_SEARCHING_BIKE;
+			} else {
+				this.dialogId = DIALOG_SEARCHING_SLOT;
+			}
+			this.criteria = criteria;
+			this.geoPoint = geoPoint;
+			
+		}
+		
+		public ShowNearestRackTask(FindRackCriteria criteria) {
+			this(criteria, null);
+		}
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			
+			hideRackInfo();
+			rackOverlay.resetHighlighting();
+			showDialog(dialogId);
+		}
+		
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			
+			dismissDialog(dialogId);
+			
+			if (nearestRack == null) {
+				// No rack found. Inform user and exit.
+				Toaster.toast(Map.this, R.string.error_search_failed, Toast.LENGTH_SHORT);
+			} else {
+				highlightRack(nearestRack.getId(), 3000);
+				animateToRack(nearestRack);
+				
+				// Show stats for the closest rack
+				Toaster.toast(Map.this, getRackInfoText(nearestRack, criteria), Toast.LENGTH_SHORT);
+			}
+		}
+
+		@Override
+		protected Void doInBackground(Object... params) {
+			// Establish location to search from
+			GeoPoint searchPoint;
+			if (geoPoint == null) {
+				searchPoint = getMyCurrentLocation();
+			} else {
+				searchPoint = geoPoint;
+			}
+
+			if (searchPoint == null) {
+				return null;
+			}
+			
+			nearestRack = getClosestRack(searchPoint, criteria);
+			return null;
+		}
+		
+		/**
+		 * Constructs string that is to be displayed to user when rack with bikes or free locks has been found
+		 * 
+		 * @param rack
+		 * @param criteria
+		 * @return
+		 */
+		private String getRackInfoText(Rack rack, FindRackCriteria criteria) {
+			final int noOfFreeItems;;
+			final String itemType;
+			if (criteria == FindRackCriteria.FreeSlot) {
+				noOfFreeItems = rack.getNumberOfEmptySlots();
+				if (noOfFreeItems > 1) {
+					itemType = getText(R.string.word_slots).toString();
+				} else {
+					itemType = getText(R.string.word_slot).toString();
+				}
+			} else {
+				noOfFreeItems = rack.getNumberOfReadyBikes();
+				if (noOfFreeItems > 1) {
+					itemType = getText(R.string.word_bikes).toString();
+				} else {
+					itemType = getText(R.string.word_bike).toString();
+				}
+			}
+			
+			return Integer.toString(noOfFreeItems) + " " + itemType;
+		}
+		
+	}
 	
 	/**
 	 * Task responsible for inserting/updating all racks according to information retrieved
