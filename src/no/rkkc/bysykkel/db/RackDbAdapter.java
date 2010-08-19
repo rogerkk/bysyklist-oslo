@@ -74,8 +74,11 @@ public class RackDbAdapter extends DbAdapter {
 								 "id = ?",
 								 new String[] {Integer.toString(id)}, 
 									null, null, null);
-
-		if (cursor.getCount() == 1) {
+		
+		int numberOfRacks = cursor.getCount();
+		cursor.close();
+		
+		if (numberOfRacks == 1) {
 			return true;
 		} else {
 			return false;

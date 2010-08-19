@@ -19,6 +19,9 @@
 	<string name="rackdialog_not_online">Ingen kontakt med stativet.</string>
 	<string name="rackdialog_dismiss">OK</string>
 	
+	<string name="favorites_freebikes">Sykler: %d</string>
+	<string name="favorites_freeslots">Låser: %d</string>
+	
 	<string name="menu_my_location">Min posisjon</string>
 	<string name="menu_more">Mer</string>
 	<string name="menu_update_rack_db">Oppdater stativer</string>

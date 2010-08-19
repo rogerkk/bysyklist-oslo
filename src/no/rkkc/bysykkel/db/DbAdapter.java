@@ -62,10 +62,19 @@ public abstract class DbAdapter {
 						"description TEXT, " +
 						"longitude INTEGER, " + // 1E6
 						"latitude INTEGER)");	 // 1E6
+			
+			db.execSQL("CREATE TABLE favorites " +
+						"(id INTEGER PRIMARY KEY, " +
+						"rackid INTEGER, " +
+						"viewcount INTEGER, " +
+						"starred INTEGER)");
 		}	
 			
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+			if (oldVersion <= 11) {
+				db.execSQL("DROP TABLE favorites");
+			}
 		}
 	}
 }

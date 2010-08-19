@@ -29,6 +29,7 @@ import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.Toaster;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
+import no.rkkc.bysykkel.db.FavoritesDbAdapter;
 import no.rkkc.bysykkel.db.RackDbAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import android.app.AlertDialog;
@@ -43,7 +44,6 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Looper;
-import android.os.Message;
 import android.os.SystemClock;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
@@ -70,7 +70,8 @@ public class Map extends MapActivity {
 	private MapView mapView;
 	private MyLocationOverlay myLocation;
 	private MapController mapController;
-	private RackDbAdapter db;
+	private RackDbAdapter rackDb;
+	private FavoritesDbAdapter favoritesDb;
 	private OsloCityBikeAdapter osloCityBikeAdapter;
 	private ViewHolder viewHolder = new ViewHolder();
 	private RacksOverlay rackOverlay; 
@@ -94,7 +95,8 @@ public class Map extends MapActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        db = (RackDbAdapter) new RackDbAdapter(Map.this).open();
+        rackDb = (RackDbAdapter) new RackDbAdapter(Map.this).open();
+        favoritesDb = (FavoritesDbAdapter) new FavoritesDbAdapter(Map.this).open();
         osloCityBikeAdapter = new OsloCityBikeAdapter();
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 
@@ -117,7 +119,7 @@ public class Map extends MapActivity {
 	@Override
     protected void onRestart() {
     	super.onRestart();
-    	db.open();
+    	rackDb.open();
     }
 	
 	@Override
@@ -142,7 +144,7 @@ public class Map extends MapActivity {
     @Override
     protected void onStop() {
     	super.onStop();
-    	db.close();
+    	rackDb.close();
     }
     
     @Override
@@ -336,7 +338,7 @@ public class Map extends MapActivity {
 	 * Set up the map with the overlay containing the bike rack represantions
 	 */
 	private void initializeMap() {
-		rackOverlay = initializeRackOverlay(db.getRacks());
+		rackOverlay = initializeRackOverlay(rackDb.getRacks());
 		mapView.getOverlays().add(rackOverlay);  
 		mapView.postInvalidate();
 	}
@@ -452,7 +454,7 @@ public class Map extends MapActivity {
 		}
 		
 		List<LocationAndDistance> sortedStationLocations = new ArrayList<LocationAndDistance>();
-		for (Rack rack : db.getRacks()) {
+		for (Rack rack : rackDb.getRacks()) {
 			Log.v(Map.TAG, rack.toString());
 			
 			Location rackLocation = new Location("Bysyklist");
@@ -500,6 +502,8 @@ public class Map extends MapActivity {
 		viewHolder.infoPanel.setRackId(rack.getId());
 		viewHolder.infoPanel.setVisibility(View.VISIBLE);
 		viewHolder.infoPanel.getStatusInfo();
+		
+		favoritesDb.addToCounter(rack.getId());
 	}
 	
 	public void hideRackInfo() {
@@ -532,6 +536,8 @@ public class Map extends MapActivity {
 				}
 			}
 		});
+		
+		favoritesDb.addToCounter(rackId);
 	}
 	
 	public void highlightRack(Integer rackId) {
@@ -821,7 +827,7 @@ public class Map extends MapActivity {
 		@Override
 		protected Boolean doInBackground(Void... arg0) {
 			OsloCityBikeAdapter osloCityBikeAdapter = new OsloCityBikeAdapter();
-			ArrayList<Integer> localRackIds = db.getRackIds();
+			ArrayList<Integer> localRackIds = rackDb.getRackIds();
 
 			try {
 				ArrayList<Integer> remoteRackIds = osloCityBikeAdapter.getRacks();
@@ -831,7 +837,7 @@ public class Map extends MapActivity {
 					for (Integer rackId : localRackIds) {
 						if (!remoteRackIds.contains(rackId)) {
 							Log.v(TAG, "Deleting rack with ID ".concat(Integer.toString(rackId)).concat(", as it was not returned by server."));
-							db.deleteRack(rackId);
+							rackDb.deleteRack(rackId);
 						}
 					}
 				}
@@ -846,16 +852,16 @@ public class Map extends MapActivity {
 						failedRackIds.add(rackId);
 						continue;
 					}
-					if (db.hasRack(rackId)) {
+					if (rackDb.hasRack(rackId)) {
 						// Update
-						localRack = db.getRack(rackId);
+						localRack = rackDb.getRack(rackId);
 						localRack.setDescription(remoteRack.getDescription());
 						localRack.setLocation(remoteRack.getLocation());
 						
-						db.updateOrInsertRack(localRack);
+						rackDb.updateOrInsertRack(localRack);
 					} else {
 						// Insert
-						db.updateOrInsertRack(remoteRack);
+						rackDb.updateOrInsertRack(remoteRack);
 					}
 				}
 			} catch (OsloCityBikeAdapter.OsloCityBikeCommunicationException e) {
