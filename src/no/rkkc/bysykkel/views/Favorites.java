@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.ListAdapter;
 import android.widget.TextView;
 
 public class Favorites extends ListActivity {
@@ -27,7 +28,7 @@ public class Favorites extends ListActivity {
 	private OsloCityBikeAdapter ocbAdapter;
 	private FavoritesDbAdapter favDbAdapter;
 	private RackDbAdapter rackDbAdapter;
-	ArrayList<Rack> items = new ArrayList<Rack>();
+	ArrayList<Rack> listItems = new ArrayList<Rack>();
 	
 
 	@Override
@@ -42,19 +43,58 @@ public class Favorites extends ListActivity {
 		ArrayList<Favorite> favorites = favDbAdapter.getFavorites();
 		for (Favorite favorite : favorites) {
 			Rack rack = rackDbAdapter.getRack(favorite.getRackId());
-			items.add(rack);
+			listItems.add(rack);
 		}
 
 		setListAdapter(new RowAdapter(this));
-		// selection = (TextView)findViewById(R.id.selection);
-		// selection.setText("Test");
+	}
+	
+	protected void onResume() {
+		super.onResume();
+		
+		updateRackStatistics();
+		
 	}
 
-	class RowAdapter extends ArrayAdapter {
+	/**
+	 * 
+	 */
+	private void updateRackStatistics() {
+		new Thread(new Runnable() {
+
+			public void run() {
+				final RowAdapter listAdapter = (RowAdapter) getListAdapter();
+
+				// Load all rack statistics
+				for (int i = 0; i < listAdapter.getCount(); i++) {
+					Rack rack = listItems.get(i);
+					
+					try {
+						Rack tmpRack = ocbAdapter.getRack(rack.getId());
+						rack.setNumberOfEmptySlots(tmpRack.getNumberOfEmptySlots());
+						rack.setNumberOfReadyBikes(tmpRack.getNumberOfReadyBikes());
+						listItems.set(i, tmpRack);
+						
+						// Refresh list
+						runOnUiThread(new Runnable() {
+							public void run() {
+								listAdapter.notifyDataSetChanged();
+							}
+						});
+					} catch (OsloCityBikeException e) {
+						// TODO: Proper error handling
+						Log.v("Test", e.getStackTrace().toString());
+					}	
+				}
+			}
+		}).start();
+	}
+	
+	class RowAdapter extends ArrayAdapter<Rack> {
 		Activity context;
 
 		RowAdapter(Activity context) {
-			super(context, R.layout.favorites_row, items);
+			super(context, R.layout.favorites_row, listItems);
 			this.context = context;
 		}
 
@@ -67,23 +107,21 @@ public class Favorites extends ListActivity {
 					.findViewById(R.id.favorite_rackinfo);
 			ImageView favoriteIcon = (ImageView) row.findViewById(R.id.favorite_icon);
 
-			Rack rackFromDb = items.get(position);
+			// TODO: Bytt variabelnavn til "rack"
+			Rack rackFromDb = listItems.get(position);
 			rackName.setText(rackFromDb.getDescription());
-
-			try {
-				Rack rack = ocbAdapter.getRack(rackFromDb.getId());
-//				rackInfo.setText(getString(R.string.rackdialog_fetching));
-				
-				String strFreeBikes = getContext().getString(R.string.favorites_freebikes);
-				strFreeBikes = String.format(strFreeBikes, rack.getNumberOfReadyBikes());
-				String strFreeSlots = getContext().getString(R.string.favorites_freeslots);
-				strFreeSlots = String.format(strFreeSlots, rack.getNumberOfEmptySlots());
-				rackInfo.setText(strFreeBikes.concat(", ").concat(strFreeSlots));
-				
-			} catch (OsloCityBikeException e) {
-				Log.v("Test", e.getStackTrace().toString());
-			}
 			
+			if (rackFromDb.hasBikeAndSlotInfo()) {
+				String strFreeBikes = getContext().getString(R.string.favorites_freebikes);
+				strFreeBikes = String.format(strFreeBikes, rackFromDb.getNumberOfReadyBikes());
+				String strFreeSlots = getContext().getString(R.string.favorites_freeslots);
+				strFreeSlots = String.format(strFreeSlots, rackFromDb.getNumberOfEmptySlots());
+				rackInfo.setText(strFreeBikes.concat(", ").concat(strFreeSlots));
+			} else {
+				// TODO: Replace with resource
+				rackInfo.setText("Venter på data...");
+			}
+				
 			favoriteIcon.setImageResource(R.drawable.btn_star_big_off);
 			
 			

@@ -65,12 +65,20 @@ public class Rack {
 		return emptyLocks;
 	}
 	
+	public void setNumberOfEmptySlots(int emptySlots) {
+		this.emptyLocks = emptySlots;
+	}
+	
 	public boolean hasInfoOnReadyBikes() {
 		return (readyBikes == null) ? false : true;
 	}
 
 	public int getNumberOfReadyBikes() {
 		return readyBikes;
+	}
+	
+	public void setNumberOfReadyBikes(int readyBikes) {
+		this.readyBikes = readyBikes;
 	}
 	
 	public boolean hasDescription() {
