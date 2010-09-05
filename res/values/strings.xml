@@ -21,12 +21,19 @@
 	
 	<string name="favorites_freebikes">Sykler: %d</string>
 	<string name="favorites_freeslots">Låser: %d</string>
+	<string name="waiting_for_data">Venter på data...</string>
 	
 	<string name="menu_my_location">Min posisjon</string>
 	<string name="menu_more">Mer</string>
 	<string name="menu_update_rack_db">Oppdater stativer</string>
 	<string name="menu_nearest_bike">Nærmeste sykkel</string>
 	<string name="menu_nearest_slot">Nærmeste lås</string>
+	<string name="menu_favorites">Favoritter</string>
+	<string name="menu_refresh_favorites">Oppdater</string>
+	<string name="menu_map">Kart</string>
+	
+	<string name="menu_star_item">Legg til favoritter</string>
+	<string name="menu_unstar_item">Fjern fra favoritter</string>
 	
 	<string name="about_app">Om Bysyklist Oslo</string>
 	

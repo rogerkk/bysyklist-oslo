@@ -52,29 +52,37 @@ public abstract class DbAdapter {
 	public class DatabaseHelper extends SQLiteOpenHelper {
 	
 		public DatabaseHelper(Context context) {
-			super(context, "citybike", null, 1);
+			super(context, "citybike", null, 2);
 		}
 		
 		@Override
 		public void onCreate(SQLiteDatabase db) {
-			db.execSQL("CREATE TABLE racks " +
-						"(id INTEGER PRIMARY KEY, " +
-						"description TEXT, " +
-						"longitude INTEGER, " + // 1E6
-						"latitude INTEGER)");	 // 1E6
-			
+			createRacksTable(db);
+			createFavoritesTable(db);
+		}
+
+		@Override
+		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+			if (oldVersion == 1) {
+				createFavoritesTable(db);
+			}
+		}
+		
+		private void createFavoritesTable(SQLiteDatabase db) {
 			db.execSQL("CREATE TABLE favorites " +
 						"(id INTEGER PRIMARY KEY, " +
 						"rackid INTEGER, " +
 						"viewcount INTEGER, " +
 						"starred INTEGER)");
 		}	
-			
-		@Override
-		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			if (oldVersion <= 11) {
-				db.execSQL("DROP TABLE favorites");
-			}
+
+		private void createRacksTable(SQLiteDatabase db) {
+			db.execSQL("CREATE TABLE racks " +
+					"(id INTEGER PRIMARY KEY, " +
+					"description TEXT, " +
+					"longitude INTEGER, " + // 1E6
+					"latitude INTEGER)");	 // 1E6
 		}
+		
 	}
 }

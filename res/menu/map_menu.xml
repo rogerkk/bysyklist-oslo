@@ -10,6 +10,10 @@
           android:title="@string/menu_my_location" 
           android:icon="@android:drawable/ic_menu_mylocation"
           />
+    <item android:id="@+id/menuitem_favorites"
+          android:title="@string/menu_favorites" 
+          android:icon="@android:drawable/ic_menu_myplaces"
+          />
     <item android:id="@+id/menuitem_sub"
           android:title="@string/menu_more" 
           android:icon="@android:drawable/ic_menu_more">
@@ -18,7 +22,7 @@
 		          android:title="@string/menu_update_rack_db" 
 		          />
 		    <item android:id="@+id/menuitem_about"
-                  android:title="@string/about_app" 
+                  android:title="@string/about_app"
                   />
 	    </menu>
     </item>

@@ -36,6 +36,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.DialogInterface.OnClickListener;
 import android.graphics.Canvas;
@@ -209,7 +210,8 @@ public class Map extends MapActivity {
 		return super.onCreateDialog(id);
 	}
 
-	public void onCreateContextMenu(ContextMenu  menu, View  v, ContextMenu.ContextMenuInfo  menuInfo) {
+    @Override
+	public void onCreateContextMenu(ContextMenu  menu, View  v, ContextMenu.ContextMenuInfo menuInfo) {
 		menu.add(Menu.NONE, Menu.FIRST, Menu.NONE, getString(R.string.menu_nearest_bike));
 		menu.add(Menu.NONE, Menu.FIRST+1, Menu.NONE, getString(R.string.menu_nearest_slot));
 	}
@@ -230,7 +232,7 @@ public class Map extends MapActivity {
 	/* Menu */
 	public boolean onCreateOptionsMenu(Menu menu) {
 	    MenuInflater inflater = getMenuInflater();
-	    inflater.inflate(R.menu.icon_menu, menu);
+	    inflater.inflate(R.menu.map_menu, menu);
 	    return true;
 	}
 
@@ -249,8 +251,12 @@ public class Map extends MapActivity {
 		    case R.id.menuitem_nearest_slot:
 		    	new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
 				return true;
+		    case R.id.menuitem_favorites:
+		    	startActivity(new Intent(this, Favorites.class));
+		    	return true;
 		    case R.id.menuitem_about:
 		    	showDialog(DIALOG_ABOUT);
+		    	return true;
 	    }
 	    return false;
 	}
@@ -503,7 +509,7 @@ public class Map extends MapActivity {
 		viewHolder.infoPanel.setVisibility(View.VISIBLE);
 		viewHolder.infoPanel.getStatusInfo();
 		
-		favoritesDb.addToCounter(rack.getId());
+		favoritesDb.incrementCounter(rack.getId());
 	}
 	
 	public void hideRackInfo() {
@@ -537,7 +543,7 @@ public class Map extends MapActivity {
 			}
 		});
 		
-		favoritesDb.addToCounter(rackId);
+		favoritesDb.incrementCounter(rackId);
 	}
 	
 	public void highlightRack(Integer rackId) {
@@ -837,6 +843,7 @@ public class Map extends MapActivity {
 					for (Integer rackId : localRackIds) {
 						if (!remoteRackIds.contains(rackId)) {
 							Log.v(TAG, "Deleting rack with ID ".concat(Integer.toString(rackId)).concat(", as it was not returned by server."));
+							favoritesDb.deleteFavorite(rackId);
 							rackDb.deleteRack(rackId);
 						}
 					}

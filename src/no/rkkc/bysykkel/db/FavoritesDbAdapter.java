@@ -23,10 +23,13 @@ public class FavoritesDbAdapter extends DbAdapter {
 		return (FavoritesDbAdapter)super.open();
 	}
 	
+	/**
+	 * Retrieves most popular favorites, sorted by starred status and visit count.
+	 */
 	public ArrayList<Favorite> getFavorites() {
 		String[] fieldsToReturn = new String[]{ID, RACK_ID, COUNTER, STARRED};
 		
-		Cursor cursor = db.query(TABLE, fieldsToReturn, null, null, null, null, COUNTER + " desc");
+		Cursor cursor = db.query(TABLE, fieldsToReturn, null, null, null, null, STARRED + " desc, " + COUNTER + " desc", "20");
 		
 		ArrayList<Favorite> favorites = new ArrayList<Favorite>();
 		while (cursor.moveToNext()) {
@@ -43,13 +46,19 @@ public class FavoritesDbAdapter extends DbAdapter {
 	}
 	
 	public void insertFavorite(int rackId) {
-		// TODO: Check that the rack is not already a favorite
-		ContentValues cv = new ContentValues();
-		cv.put(RACK_ID, rackId);
-		cv.put(COUNTER, 0);
-		cv.put(STARRED, 0);
-
-		db.insert(TABLE, null, cv);
+		if (getFavorite(rackId) == null) {
+			ContentValues cv = new ContentValues();
+			cv.put(RACK_ID, rackId);
+			cv.put(COUNTER, 0);
+			cv.put(STARRED, 0);
+	
+			db.insert(TABLE, null, cv);
+		}
+	}
+	
+	public void deleteFavorite(int rackId) {
+		String[] selectArgs = new String[] { Integer.toString(rackId) };
+		db.delete(TABLE, "rackid = ?", selectArgs);
 	}
 	
 	public Favorite getFavorite(int rackId) {
@@ -71,7 +80,7 @@ public class FavoritesDbAdapter extends DbAdapter {
 		
 	}
 
-	public void addToCounter(int rackId) {
+	public void incrementCounter(int rackId) {
 		
 		// Check if rack is in favorites table. If not, add it as one.
 		Favorite favorite = getFavorite(rackId);
@@ -89,6 +98,18 @@ public class FavoritesDbAdapter extends DbAdapter {
 		cursor.close();
 	}
 
+	public void toggleStarred(int rackId) {
+		ContentValues cv = new ContentValues();
+
+		if (isStarred(rackId)) {
+			cv.put(STARRED, 0);
+		} else {
+			cv.put(STARRED, 1);
+		}
+		
+		db.update(TABLE, cv, "rackid = ?", new String[] { Integer.toString(rackId) });
+	}
+	
 	public boolean isStarred(int rackId) {
 		String[] columns = { STARRED };
 
