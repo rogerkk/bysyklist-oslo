@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent">
-	<no.rkkc.bysykkel.views.BysyklistMapView android:id="@+id/map"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:apiKey="0WQ2K8Xilm-Cn9W5pC6HORcUVMmYDt-JS5gvZCg"
-		android:clickable="true"/>
-		<!-- Debug key: 0WQ2K8Xilm-Au_l8uDRIpoZasVElNzjZGuEe48Q -->
-		<!-- Prod key:  0WQ2K8Xilm-Cn9W5pC6HORcUVMmYDt-JS5gvZCg-->
-	<LinearLayout android:id="@+id/zoom"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:layout_alignParentBottom="true"
-		android:layout_alignParentLeft="true" />
-		
-    <include android:id="@+id/mapoverlay" layout="@layout/map_overlay" />
-</RelativeLayout>
+<TabHost xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/tabhost"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+        <TabWidget
+            android:id="@android:id/tabs"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+        <FrameLayout
+            android:id="@android:id/tabcontent"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" />
+    </LinearLayout>
+</TabHost>

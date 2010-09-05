@@ -124,9 +124,7 @@ public class Favorites extends ListActivity {
 				
 			favoriteIcon.setImageResource(R.drawable.btn_star_big_off);
 			
-			
 			return row;
-			
 		}
 	}
 

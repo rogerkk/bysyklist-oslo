@@ -100,7 +100,7 @@ public class Map extends MapActivity {
         osloCityBikeAdapter = new OsloCityBikeAdapter();
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 
-        setContentView(R.layout.main);
+        setContentView(R.layout.map);
         setupMapView();
         setupInfoPanel();
         setupMyLocation(savedInstanceState);
@@ -287,7 +287,7 @@ public class Map extends MapActivity {
 
 	private void setupMapView() {
 	    // Set up map view
-	    mapView = (MapView)findViewById(R.id.map);
+	    mapView = (MapView)findViewById(R.id.mapview);
 	    mapView.setBuiltInZoomControls(true);
 	    registerForContextMenu(mapView);
 	    mapController = mapView.getController();
