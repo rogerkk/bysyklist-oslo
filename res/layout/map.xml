@@ -5,7 +5,7 @@
 	<no.rkkc.bysykkel.views.BysyklistMapView android:id="@+id/mapview"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
-		android:apiKey="0WQ2K8Xilm-Au_l8uDRIpoZasVElNzjZGuEe48Q"
+		android:apiKey="0WQ2K8Xilm-Cn9W5pC6HORcUVMmYDt-JS5gvZCg"
 		android:clickable="true"/>
 		<!-- Debug key: 0WQ2K8Xilm-Au_l8uDRIpoZasVElNzjZGuEe48Q -->
 		<!-- Prod key:  0WQ2K8Xilm-Cn9W5pC6HORcUVMmYDt-JS5gvZCg-->
