@@ -63,7 +63,7 @@ public class Favorites extends ListActivity {
 	}
 	
 	@Override
-    protected void onStart() {
+    protected void onRestart() {
     	super.onStart();
     	rackDbAdapter.open();
     	favDbAdapter.open();

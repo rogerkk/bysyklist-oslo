@@ -120,13 +120,13 @@ public class Map extends MapActivity {
 	@Override
     protected void onRestart() {
     	super.onRestart();
+    	rackDb.open();
+    	favoritesDb.open();
     }
 	
 	@Override
     protected void onStart() {
     	super.onStart();
-    	rackDb.open();
-    	favoritesDb.open();
     }
     
     @Override
