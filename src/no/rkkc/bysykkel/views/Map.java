@@ -206,7 +206,7 @@ public class Map extends MapActivity {
 							dialog.cancel();
 						}
 					   });
-				return builder.create().show();
+				return builder.create();
 		}
 		
 		return super.onCreateDialog(id);
