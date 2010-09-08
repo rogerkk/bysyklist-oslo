@@ -62,12 +62,25 @@ public class Favorites extends ListActivity {
 		setListAdapter(new RowAdapter(this));
 	}
 	
+	@Override
+    protected void onStart() {
+    	super.onStart();
+    	rackDbAdapter.open();
+    	favDbAdapter.open();
+    }
+	
 	protected void onResume() {
 		super.onResume();
 		
 		updateRackStatistics();
-		
 	}
+	
+    @Override
+    protected void onStop() {
+    	super.onStop();
+    	rackDbAdapter.close();
+    	favDbAdapter.close();
+    }
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
@@ -162,7 +175,16 @@ public class Favorites extends ListActivity {
 						Rack tmpRack = ocbAdapter.getRack(rack.getId());
 						rack.setNumberOfEmptySlots(tmpRack.getNumberOfEmptySlots());
 						rack.setNumberOfReadyBikes(tmpRack.getNumberOfReadyBikes());
-						listItems.set(i, tmpRack);
+
+					} catch (OsloCityBikeException e) {
+						Log.v("Test", e.getStackTrace().toString());
+
+						// Set negative values to signalize to RowAdapter that communication failed
+						rack.setNumberOfEmptySlots(-1);
+						rack.setNumberOfReadyBikes(-1);
+
+					} finally {
+						listItems.set(i, rack);
 						
 						// Refresh list
 						runOnUiThread(new Runnable() {
@@ -170,10 +192,7 @@ public class Favorites extends ListActivity {
 								listAdapter.notifyDataSetChanged();
 							}
 						});
-					} catch (OsloCityBikeException e) {
-						// TODO: Proper error handling
-						Log.v("Test", e.getStackTrace().toString());
-					}	
+					}
 				}
 
 				// Hide progressbar
@@ -218,7 +237,9 @@ public class Favorites extends ListActivity {
 			wrapper.getRackName().setText(rack.getDescription());
 
 			// Display number of ready bikes / free slots
-			if (rack.hasBikeAndSlotInfo()) {
+			if (rack.hasBikeAndSlotInfo() && rack.getNumberOfEmptySlots() == -1) {
+				wrapper.getRackInfo().setText(R.string.error_communication_failed);
+			} else if (rack.hasBikeAndSlotInfo()) {
 				String strFreeBikes = getContext().getString(R.string.favorites_freebikes);
 				strFreeBikes = String.format(strFreeBikes, rack.getNumberOfReadyBikes());
 				String strFreeSlots = getContext().getString(R.string.favorites_freeslots);

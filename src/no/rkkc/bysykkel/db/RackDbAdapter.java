@@ -24,6 +24,10 @@ public class RackDbAdapter extends DbAdapter {
 		super(context, TABLE);
 	}
 	
+	public RackDbAdapter open() {
+		return (RackDbAdapter)super.open();
+	}
+	
 	public void updateOrInsertRack(Rack rack) {
 		ContentValues cv = new ContentValues();
 		

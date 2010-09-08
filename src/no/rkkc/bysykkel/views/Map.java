@@ -96,8 +96,8 @@ public class Map extends MapActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        rackDb = (RackDbAdapter) new RackDbAdapter(Map.this).open();
-        favoritesDb = (FavoritesDbAdapter) new FavoritesDbAdapter(Map.this).open();
+        rackDb = new RackDbAdapter(Map.this).open();
+        favoritesDb = new FavoritesDbAdapter(Map.this).open();
         osloCityBikeAdapter = new OsloCityBikeAdapter();
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 
@@ -120,12 +120,13 @@ public class Map extends MapActivity {
 	@Override
     protected void onRestart() {
     	super.onRestart();
-    	rackDb.open();
     }
 	
 	@Override
     protected void onStart() {
     	super.onStart();
+    	rackDb.open();
+    	favoritesDb.open();
     }
     
     @Override
@@ -146,6 +147,7 @@ public class Map extends MapActivity {
     protected void onStop() {
     	super.onStop();
     	rackDb.close();
+    	favoritesDb.close();
     }
     
     @Override
@@ -204,7 +206,7 @@ public class Map extends MapActivity {
 							dialog.cancel();
 						}
 					   });
-				builder.create().show();
+				return builder.create().show();
 		}
 		
 		return super.onCreateDialog(id);

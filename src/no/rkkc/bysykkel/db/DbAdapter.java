@@ -37,16 +37,18 @@ public abstract class DbAdapter {
 		this.context = context;
 		this.queryBuilder = new SQLiteQueryBuilder();
 		this.queryBuilder.setTables(table);
+		dbHelper = new DatabaseHelper(context);
 	}
 	
 	public DbAdapter open() {
-		dbHelper = new DatabaseHelper(this.context);
 		this.db = dbHelper.getWritableDatabase();
 		return this;
 	}
 	
 	public void close() {
-		dbHelper.close();
+		if (db != null) {
+			db.close();
+		}
 	}
 	
 	public class DatabaseHelper extends SQLiteOpenHelper {
