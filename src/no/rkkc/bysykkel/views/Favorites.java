@@ -27,7 +27,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public class Favorites extends ListActivity {
 
@@ -53,18 +52,17 @@ public class Favorites extends ListActivity {
 		favDbAdapter = (FavoritesDbAdapter) new FavoritesDbAdapter(this).open();
 		rackDbAdapter = (RackDbAdapter) new RackDbAdapter(this).open();
 
-		ArrayList<Favorite> favorites = favDbAdapter.getFavorites();
-		for (Favorite favorite : favorites) {
-			Rack rack = rackDbAdapter.getRack(favorite.getRackId());
-			listItems.add(rack);
-		}
-
 		setListAdapter(new RowAdapter(this));
 	}
 	
+	protected void onStart() {
+		super.onStart();
+		refreshListItems();
+	}
+
 	@Override
     protected void onRestart() {
-    	super.onStart();
+    	super.onRestart();
     	rackDbAdapter.open();
     	favDbAdapter.open();
     }
@@ -72,7 +70,7 @@ public class Favorites extends ListActivity {
 	protected void onResume() {
 		super.onResume();
 		
-		updateRackStatistics();
+		refreshRackStatistics();
 	}
 	
     @Override
@@ -127,10 +125,13 @@ public class Favorites extends ListActivity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    switch (item.getItemId()) { 
 		    case R.id.menuitem_map:
-		    	startActivity(new Intent(this, Map.class));
+		    	Intent mapIntent = new Intent(this, Map.class);
+		    	mapIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+		    	
+		    	startActivity(mapIntent);
 		        return true;
 		    case R.id.menuitem_refresh_favorites:
-		    	updateRackStatistics();
+		    	refreshRackStatistics();
 		    	return true;
 //		    case R.id.menuitem_rack_sync:
 //		    	new RackSyncTask().execute((Void[])null);
@@ -151,9 +152,26 @@ public class Favorites extends ListActivity {
 	
 	
 	/**
+	 * Refreshes the list of racks to be displayed in our list.
+	 */
+	private void refreshListItems() {
+		ArrayList<Favorite> favorites = favDbAdapter.getFavorites();
+		
+		ArrayList<Rack> tmpItems = new ArrayList<Rack>();
+		for (Favorite favorite : favorites) {
+			Rack rack = rackDbAdapter.getRack(favorite.getRackId());
+			tmpItems.add(rack);
+		}
+	
+		// Not quite sure why assigning tmpItems to listItems won't work, but.. well.. it doesn't.
+		listItems.clear();
+		listItems.addAll(tmpItems);
+	}
+
+	/**
 	 * Retrieve fresh rack stats, and notify listAdapter of any changes.
 	 */
-	private void updateRackStatistics() {
+	private void refreshRackStatistics() {
 		new Thread(new Runnable() {
 
 			public void run() {
@@ -216,7 +234,6 @@ public class Favorites extends ListActivity {
 
 		public View getView(int position, View convertView, ViewGroup parent) {
 
-
 			/**
 			 * Use existsing view if it exists. Also makes use of ViewWrapper to avoid calling
 			 * findViewById() on every getView() call.
@@ -251,7 +268,6 @@ public class Favorites extends ListActivity {
 			}
 			
 			// Display favorite icon
-			int id = rack.getId();
 			if (favDbAdapter.isStarred(rack.getId())) {
 				wrapper.getFavoriteIcon().setVisibility(View.VISIBLE);
 			} else {

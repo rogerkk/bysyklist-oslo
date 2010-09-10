@@ -254,7 +254,10 @@ public class Map extends MapActivity {
 		    	new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
 				return true;
 		    case R.id.menuitem_favorites:
-		    	startActivity(new Intent(this, Favorites.class));
+		    	Intent favoritesIntent = new Intent(this, Favorites.class);
+		    	favoritesIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+		    	
+		    	startActivity(favoritesIntent);
 		    	return true;
 		    case R.id.menuitem_about:
 		    	showDialog(DIALOG_ABOUT);
