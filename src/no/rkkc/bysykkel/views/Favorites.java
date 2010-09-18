@@ -2,6 +2,8 @@ package no.rkkc.bysykkel.views;
 
 import java.util.ArrayList;
 
+import no.rkkc.bysykkel.Constants;
+import no.rkkc.bysykkel.MenuHelper;
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
@@ -9,9 +11,10 @@ import no.rkkc.bysykkel.db.FavoritesDbAdapter;
 import no.rkkc.bysykkel.db.RackDbAdapter;
 import no.rkkc.bysykkel.model.Favorite;
 import no.rkkc.bysykkel.model.Rack;
+import no.rkkc.bysykkel.tasks.RackSyncTask;
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.ListActivity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -80,6 +83,18 @@ public class Favorites extends ListActivity {
     	favDbAdapter.close();
     }
 	
+    @Override
+	protected Dialog onCreateDialog(int id) {
+		switch (id) {
+			case Constants.DIALOG_RACKSYNC:
+				return RackSyncTask.getProgressDialog(this);
+			case Constants.DIALOG_ABOUT:
+				return new AboutDialog(this);
+		}
+		
+		return super.onCreateDialog(id);
+	}
+    
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo; 
@@ -93,8 +108,6 @@ public class Favorites extends ListActivity {
 			menu.add(Menu.NONE, CONTEXT_STAR, 0, R.string.menu_star_item);
 		}
 	}
-	
-	
 	
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
@@ -117,30 +130,33 @@ public class Favorites extends ListActivity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 	    MenuInflater inflater = getMenuInflater();
-	    inflater.inflate(R.menu.favorites_menu, menu);
+	    inflater.inflate(R.menu.main, menu);
+	    menu.setGroupVisible(R.id.favorites_menu, true);
 	    return true;
 	}
 	
 	/* Handles menu item selections */
 	public boolean onOptionsItemSelected(MenuItem item) {
-	    switch (item.getItemId()) { 
-		    case R.id.menuitem_map:
-		    	Intent mapIntent = new Intent(this, Map.class);
-		    	mapIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-		    	
-		    	startActivity(mapIntent);
-		        return true;
-		    case R.id.menuitem_refresh_favorites:
-		    	refreshRackStatistics();
-		    	return true;
+		MenuHelper menuHelper = new MenuHelper(this);
+		return menuHelper.favoriteOptionsItemSelected(item);
+//	    switch (item.getItemId()) { 
+//		    case R.id.menuitem_map:
+//		    	Intent mapIntent = new Intent(this, Map.class);
+//		    	mapIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+//		    	
+//		    	startActivity(mapIntent);
+//		        return true;
+//		    case R.id.menuitem_refresh_favorites:
+//		    	refreshRackStatistics();
+//		    	return true;
 //		    case R.id.menuitem_rack_sync:
 //		    	new RackSyncTask().execute((Void[])null);
 //		    	return true;
 //		    case R.id.menuitem_about:
 //		    	showDialog(DIALOG_ABOUT);
 //		    	return true;
-	    }
-	    return false;
+//	    }
+//	    return false;
 	}
 	
 	@Override
@@ -171,7 +187,7 @@ public class Favorites extends ListActivity {
 	/**
 	 * Retrieve fresh rack stats, and notify listAdapter of any changes.
 	 */
-	private void refreshRackStatistics() {
+	public void refreshRackStatistics() {
 		new Thread(new Runnable() {
 
 			public void run() {

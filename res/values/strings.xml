@@ -6,6 +6,7 @@
     <string name="word_bikes">sykler</string>
     <string name="word_slot">lås</string>
 	<string name="word_slots">låser</string>
+	<string name="word_close">Lukk</string>
 	
 	<string name="syncdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
 	

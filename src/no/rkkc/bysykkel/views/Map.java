@@ -23,7 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import no.rkkc.bysykkel.Constants;
 import no.rkkc.bysykkel.LongpressHelper;
+import no.rkkc.bysykkel.MenuHelper;
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.Toaster;
@@ -32,13 +34,10 @@ import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import no.rkkc.bysykkel.db.FavoritesDbAdapter;
 import no.rkkc.bysykkel.db.RackDbAdapter;
 import no.rkkc.bysykkel.model.Rack;
-import android.app.AlertDialog;
+import no.rkkc.bysykkel.tasks.RackSyncTask;
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.DialogInterface.OnClickListener;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -46,7 +45,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -83,12 +81,6 @@ public class Map extends MapActivity {
 	GeoPoint savedLocation;
 	int savedZoomLevel;
 	
-	static final int DIALOG_RACKSYNC = 0; // Progressbar when initializing the database the first time the app is run.
-	static final int DIALOG_SEARCHING_BIKE = 1; // Progressbar when searching for ready bikes
-	static final int DIALOG_SEARCHING_SLOT = 2; // Progressbar when searching for free slots
-	static final int DIALOG_COMMUNICATION_ERROR = 3; // Something has failed during communication with servers
-	static final int DIALOG_ABOUT = 4;
-	
 	private static final String TAG = "Bysyklist-Map";
 	
     /** Called when the activity is first created. */
@@ -107,7 +99,7 @@ public class Map extends MapActivity {
         setupMyLocation(savedInstanceState);
 
         if (isFirstRun()) {
-    		new RackSyncTask().execute((Void[])null);
+    		new RackSyncTask(this).execute((Void[])null);
     		Log.v("Test", "bla");
         	showOsloOverview();
         } else {
@@ -167,14 +159,7 @@ public class Map extends MapActivity {
     @Override
 	protected Dialog onCreateDialog(int id) {
 		switch (id) {
-			case DIALOG_RACKSYNC:
-				ProgressDialog initDialog = new ProgressDialog(this);
-				initDialog.setMessage(getString(R.string.syncdialog_message));
-				initDialog.setIndeterminate(true);
-				initDialog.setCancelable(false);
-				
-				return initDialog;
-			case DIALOG_SEARCHING_BIKE:
+			case Constants.DIALOG_SEARCHING_BIKE:
 				ProgressDialog bikeSearchDialog = new ProgressDialog(this);
 				String message = String.format(getString(R.string.searchdialog_message_first), 
 						getString(R.string.word_bike));
@@ -183,7 +168,7 @@ public class Map extends MapActivity {
 				bikeSearchDialog.setCancelable(true);
 				
 				return bikeSearchDialog;
-			case DIALOG_SEARCHING_SLOT:
+			case Constants.DIALOG_SEARCHING_SLOT:
 				ProgressDialog slotSearchDialog = new ProgressDialog(this);
 				String slotMessage = String.format(getString(R.string.searchdialog_message_first), 
 						getString(R.string.word_slot));
@@ -192,21 +177,10 @@ public class Map extends MapActivity {
 				slotSearchDialog.setCancelable(true);
 				
 				return slotSearchDialog;
-			case DIALOG_ABOUT:
-				View view = View.inflate(Map.this, R.layout.scrollable_textview, null);
-				TextView textView = (TextView) view.findViewById(R.id.message);
-				textView.setMovementMethod(LinkMovementMethod.getInstance());
-				textView.setText(R.string.content_about);
-				
-				AlertDialog.Builder builder = new AlertDialog.Builder(this);
-				builder.setView(view)
-						.setTitle(getString(R.string.about_app))
-						.setNeutralButton("Lukk", new OnClickListener() {
-						public void onClick(DialogInterface dialog, int which) {
-							dialog.cancel();
-						}
-					   });
-				return builder.create();
+			case Constants.DIALOG_RACKSYNC:
+				return RackSyncTask.getProgressDialog(this);
+			case Constants.DIALOG_ABOUT:
+				return new AboutDialog(this);
 		}
 		
 		return super.onCreateDialog(id);
@@ -234,36 +208,15 @@ public class Map extends MapActivity {
 	/* Menu */
 	public boolean onCreateOptionsMenu(Menu menu) {
 	    MenuInflater inflater = getMenuInflater();
-	    inflater.inflate(R.menu.map_menu, menu);
+	    inflater.inflate(R.menu.main, menu);
+	    menu.setGroupVisible(R.id.map_menu, true);
 	    return true;
 	}
 
 	/* Handles menu item selections */
 	public boolean onOptionsItemSelected(MenuItem item) {
-	    switch (item.getItemId()) { 
-		    case R.id.menuitem_my_location:
-		    	animateToMyLocation();
-		        return true;
-		    case R.id.menuitem_rack_sync:
-		    	new RackSyncTask().execute((Void[])null);
-		    	return true;
-		    case R.id.menuitem_nearest_bike:
-				new ShowNearestRackTask(FindRackCriteria.ReadyBike).execute();
-				return true;
-		    case R.id.menuitem_nearest_slot:
-		    	new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
-				return true;
-		    case R.id.menuitem_favorites:
-		    	Intent favoritesIntent = new Intent(this, Favorites.class);
-		    	favoritesIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-		    	
-		    	startActivity(favoritesIntent);
-		    	return true;
-		    case R.id.menuitem_about:
-		    	showDialog(DIALOG_ABOUT);
-		    	return true;
-	    }
-	    return false;
+		MenuHelper menuHelper = new MenuHelper(this);
+		return menuHelper.mapOptionsItemSelected(item);
 	}
 
 	@Override
@@ -348,7 +301,7 @@ public class Map extends MapActivity {
 	/**
 	 * Set up the map with the overlay containing the bike rack represantions
 	 */
-	private void initializeMap() {
+	public void initializeMap() {
 		rackOverlay = initializeRackOverlay(rackDb.getRacks());
 		mapView.getOverlays().add(rackOverlay);  
 		mapView.postInvalidate();
@@ -412,7 +365,7 @@ public class Map extends MapActivity {
 	/**
 	 * 
 	 */
-	private void animateToMyLocation() {
+	public void animateToMyLocation() {
 		new Thread(new Runnable(){
 			public void run() {
 				 Looper.prepare();
@@ -698,7 +651,7 @@ public class Map extends MapActivity {
 		}
 	}
 	
-		private class ShowNearestRackTask extends AsyncTask<Object, Void, Void> {
+	public class ShowNearestRackTask extends AsyncTask<Object, Void, Void> {
 		int dialogId;
 		FindRackCriteria criteria;
 		GeoPoint geoPoint;
@@ -708,9 +661,9 @@ public class Map extends MapActivity {
 			super();
 			
 			if (criteria == FindRackCriteria.ReadyBike) {
-				this.dialogId = DIALOG_SEARCHING_BIKE;
+				this.dialogId = Constants.DIALOG_SEARCHING_BIKE;
 			} else {
-				this.dialogId = DIALOG_SEARCHING_SLOT;
+				this.dialogId = Constants.DIALOG_SEARCHING_SLOT;
 			}
 			this.criteria = criteria;
 			this.geoPoint = geoPoint;
@@ -797,107 +750,7 @@ public class Map extends MapActivity {
 		
 	}
 	
-	/**
-	 * Task responsible for inserting/updating all racks according to information retrieved
-	 * from the Clear Channel servers. 
-	 *
-	 */
-	private class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
-		private ArrayList<Integer> failedRackIds = new ArrayList<Integer>();
-		
-		@Override
-		protected void onPreExecute() {
-			super.onPreExecute();
-			showDialog(DIALOG_RACKSYNC);
-		}
 
-		@Override
-		protected void onPostExecute(Boolean result) {
-			super.onPostExecute(result);
-			initializeMap();
-			dismissDialog(DIALOG_RACKSYNC);
-			if (!result) {
-           		AlertDialog.Builder builder = new AlertDialog.Builder(Map.this);
-    			builder.setMessage("En feil oppsto under oppdateringen. Du kan oppdatere stativene senere, eller forsøke på nytt nå.")
-    			       .setCancelable(false)
-    			       .setPositiveButton("Forsøk igjen", new DialogInterface.OnClickListener() {
-    			           public void onClick(DialogInterface dialog, int id) {
-    			                new RackSyncTask().execute((Void [])null);
-    			           }
-    			       })
-    			       .setNeutralButton("Senere", new DialogInterface.OnClickListener() {
-    			           public void onClick(DialogInterface dialog, int id) {
-    			                dialog.cancel();
-    			           }
-    			       });
-    			builder.create().show();
-			}
-			saveRackUpdatePreference();
-		}
-
-		@Override
-		protected Boolean doInBackground(Void... arg0) {
-			OsloCityBikeAdapter osloCityBikeAdapter = new OsloCityBikeAdapter();
-			ArrayList<Integer> localRackIds = rackDb.getRackIds();
-
-			try {
-				ArrayList<Integer> remoteRackIds = osloCityBikeAdapter.getRacks();
-				
-				// Delete racks in DB that are not returned from server
-				if (remoteRackIds.size() > 100) {// Safeguard, in case Clear Channel returns empty list
-					for (Integer rackId : localRackIds) {
-						if (!remoteRackIds.contains(rackId)) {
-							Log.v(TAG, "Deleting rack with ID ".concat(Integer.toString(rackId)).concat(", as it was not returned by server."));
-							favoritesDb.deleteFavorite(rackId);
-							rackDb.deleteRack(rackId);
-						}
-					}
-				}
-				
-				// Update or insert racks returned from server
-				Rack remoteRack;
-				Rack localRack;
-				for (int rackId: remoteRackIds) {
-					try {
-						remoteRack = osloCityBikeAdapter.getRack(rackId);
-					} catch (OsloCityBikeException e) {
-						failedRackIds.add(rackId);
-						continue;
-					}
-					if (rackDb.hasRack(rackId)) {
-						// Update
-						localRack = rackDb.getRack(rackId);
-						localRack.setDescription(remoteRack.getDescription());
-						localRack.setLocation(remoteRack.getLocation());
-						
-						rackDb.updateOrInsertRack(localRack);
-					} else {
-						// Insert
-						rackDb.updateOrInsertRack(remoteRack);
-					}
-				}
-			} catch (OsloCityBikeAdapter.OsloCityBikeCommunicationException e) {
-				return false;
-			}
-			
-			if (failedRackIds.size() > 0) {
-				Log.v(TAG, "test");
-				return false;
-			}
-			
-			return true;
-		}
-		
-		/**
-		 * Saves current time in the preferences, to keep track of when the racks list was last
-		 * updated
-		 */
-		private void saveRackUpdatePreference() {
-			SharedPreferences settings = getPreferences(MODE_PRIVATE);
-			settings.edit().putLong("racksUpdatedTime", System.currentTimeMillis()).commit();
-		}
-	}
-	
 
     static class ViewHolder {
         ImageButton list;

@@ -16,9 +16,14 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package no.rkkc.bysykkel;
+package no.rkkc.bysykkel.views;
 
+import no.rkkc.bysykkel.OsloCityBikeAdapter;
+import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
+import no.rkkc.bysykkel.R.id;
+import no.rkkc.bysykkel.R.layout;
+import no.rkkc.bysykkel.R.string;
 import no.rkkc.bysykkel.model.Rack;
 import android.app.Dialog;
 import android.content.Context;
