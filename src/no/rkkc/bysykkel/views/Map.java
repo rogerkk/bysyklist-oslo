@@ -300,9 +300,17 @@ public class Map extends MapActivity {
 	 * Set up the map with the overlay containing the bike rack represantions
 	 */
 	public void initializeMap() {
-		rackOverlay = initializeRackOverlay(rackDb.getRacks());
-		mapView.getOverlays().add(rackOverlay);  
-		mapView.postInvalidate();
+		
+		/*
+		 * Check if rackDb is null here, because this method might be called from RackSyncTask,
+		 * and the Activity may therefore be paused at the time calling. Paused Activity = 
+		 * closed DbAdapter
+		 */
+		if (rackDb.isOpen()) {
+			rackOverlay = initializeRackOverlay(rackDb.getRacks());
+			mapView.getOverlays().add(rackOverlay);  
+			mapView.invalidate();
+		}
 	}
 
 	/**

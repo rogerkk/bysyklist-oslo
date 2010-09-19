@@ -49,6 +49,14 @@ public abstract class DbAdapter {
 			db.close();
 		}
 	}
+	
+	public boolean isOpen() {
+		if (db != null) {
+			return db.isOpen(); 
+		} else {
+			return false;
+		}
+	}
 
 	public class DatabaseHelper extends SQLiteOpenHelper {
 
