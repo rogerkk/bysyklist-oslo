@@ -177,8 +177,6 @@ public class Map extends MapActivity {
 				slotSearchDialog.setCancelable(true);
 				
 				return slotSearchDialog;
-			case Constants.DIALOG_RACKSYNC:
-				return RackSyncTask.getProgressDialog(this);
 			case Constants.DIALOG_ABOUT:
 				return new AboutDialog(this);
 		}

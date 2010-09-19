@@ -2,7 +2,6 @@ package no.rkkc.bysykkel.tasks;
 
 import java.util.ArrayList;
 
-import no.rkkc.bysykkel.Constants;
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
@@ -12,9 +11,7 @@ import no.rkkc.bysykkel.model.Rack;
 import no.rkkc.bysykkel.views.Map;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
@@ -28,6 +25,7 @@ import android.util.Log;
 public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 	private Activity activity;
 	private RackDbAdapter rackDb;
+	private ProgressDialog syncDialog;
 	private FavoritesDbAdapter favoritesDb;
 	private ArrayList<Integer> failedRackIds = new ArrayList<Integer>();
 	
@@ -40,11 +38,16 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
         rackDb = new RackDbAdapter(activity).open();
         favoritesDb = new FavoritesDbAdapter(activity).open();
 	}
+	
+	@Override
+	protected void onProgressUpdate(Integer... progress) {
+		syncDialog.incrementProgressBy(1);
+	}
 
 	@Override
 	protected void onPreExecute() {
 		super.onPreExecute();
-		activity.showDialog(Constants.DIALOG_RACKSYNC);
+		setupProgressDialog();
 	}
 
 	@Override
@@ -53,7 +56,7 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 		if (activity instanceof Map) {
 			((Map)activity).initializeMap();
 		}
-		activity.dismissDialog(Constants.DIALOG_RACKSYNC);
+		syncDialog.dismiss();
 		if (!result) {
        		AlertDialog.Builder builder = new AlertDialog.Builder(activity);
 			builder.setMessage("En feil oppsto under oppdateringen. Du kan oppdatere stativene senere, eller forsøke på nytt nå.")
@@ -79,7 +82,9 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 		ArrayList<Integer> localRackIds = rackDb.getRackIds();
 
 		try {
-			ArrayList<Integer> remoteRackIds = osloCityBikeAdapter.getRacks();
+			final ArrayList<Integer> remoteRackIds = osloCityBikeAdapter.getRacks();
+			syncDialog.setMax(remoteRackIds.size()+2);
+			publishProgress();
 			
 			// Delete racks in DB that are not returned from server
 			if (remoteRackIds.size() > 100) {// Safeguard, in case Clear Channel returns empty list
@@ -90,6 +95,7 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 						rackDb.deleteRack(rackId);
 					}
 				}
+				publishProgress();
 			}
 			
 			// Update or insert racks returned from server
@@ -113,13 +119,15 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 					// Insert
 					rackDb.updateOrInsertRack(remoteRack);
 				}
+				publishProgress();
 			}
 		} catch (OsloCityBikeAdapter.OsloCityBikeCommunicationException e) {
 			return false;
 		}
 		
 		if (failedRackIds.size() > 0) {
-			Log.v(TAG, "test");
+			// TODO: Add some sensible logging here.
+			Log.v(TAG, "Some racks had errors");
 			return false;
 		}
 		
@@ -127,21 +135,16 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 	}
 	
 	/**
-	 * The calling Activitys onCreateDialog() needs to be implemented to handle the showDialog and
-	 * dismissDialog calls in this task. It can call this method to get the progressdialog.
-	 * 
-	 * @param context
-	 * @return
+	 * Sets up the ProgressDialog shown when this task is running.
 	 */
-	public static Dialog getProgressDialog(Context context) {
-		ProgressDialog initDialog = new ProgressDialog(context);
-		initDialog.setMessage(context.getString(R.string.syncdialog_message));
-		initDialog.setIndeterminate(true);
-		initDialog.setCancelable(false);
-		
-		return initDialog;
+	private void setupProgressDialog() {
+		syncDialog = new ProgressDialog(activity);
+		syncDialog.setMessage(activity.getString(R.string.syncdialog_message));
+		syncDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+		syncDialog.setCancelable(false);
+		syncDialog.show();
 	}
-
+	
 	/**
 	 * Saves current time in the preferences, to keep track of when the racks list was last
 	 * updated

@@ -11,7 +11,6 @@ import no.rkkc.bysykkel.db.FavoritesDbAdapter;
 import no.rkkc.bysykkel.db.RackDbAdapter;
 import no.rkkc.bysykkel.model.Favorite;
 import no.rkkc.bysykkel.model.Rack;
-import no.rkkc.bysykkel.tasks.RackSyncTask;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ListActivity;
@@ -86,8 +85,6 @@ public class Favorites extends ListActivity {
     @Override
 	protected Dialog onCreateDialog(int id) {
 		switch (id) {
-			case Constants.DIALOG_RACKSYNC:
-				return RackSyncTask.getProgressDialog(this);
 			case Constants.DIALOG_ABOUT:
 				return new AboutDialog(this);
 		}
