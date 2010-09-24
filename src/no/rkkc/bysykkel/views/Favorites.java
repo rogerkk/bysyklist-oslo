@@ -14,6 +14,7 @@ import no.rkkc.bysykkel.model.Rack;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ListActivity;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -38,6 +39,7 @@ public class Favorites extends ListActivity {
 	private FavoritesDbAdapter favDbAdapter;
 	private RackDbAdapter rackDbAdapter;
 	ArrayList<Rack> listItems = new ArrayList<Rack>();
+	AsyncTask<RowAdapter, RowAdapter, Void> refreshRackStatsTask;
 	
 	static final int CONTEXT_STAR = 0;
 	static final int CONTEXT_UNSTAR = 1;
@@ -53,31 +55,34 @@ public class Favorites extends ListActivity {
 		ocbAdapter = (OsloCityBikeAdapter) new OsloCityBikeAdapter();
 		favDbAdapter = (FavoritesDbAdapter) new FavoritesDbAdapter(this).open();
 		rackDbAdapter = (RackDbAdapter) new RackDbAdapter(this).open();
+		setListAdapter(new RowAdapter(this, R.layout.favorites_row, listItems));
 
-		setListAdapter(new RowAdapter(this));
 	}
 	
 	protected void onStart() {
 		super.onStart();
 		refreshListItems();
+		refreshRackStatistics();
 	}
 
 	@Override
     protected void onRestart() {
     	super.onRestart();
-    	rackDbAdapter.open();
-    	favDbAdapter.open();
     }
 	
 	protected void onResume() {
 		super.onResume();
-		
-		refreshRackStatistics();
 	}
 	
     @Override
     protected void onStop() {
     	super.onStop();
+    	refreshRackStatsTask.cancel(true);
+    }
+
+    @Override
+    protected void onDestroy() {
+    	super.onDestroy();
     	rackDbAdapter.close();
     	favDbAdapter.close();
     }
@@ -162,7 +167,9 @@ public class Favorites extends ListActivity {
 		return super.onMenuItemSelected(featureId, item);
 	}
 
-	
+	public void refreshRackStatistics() {
+		refreshRackStatsTask = new RefreshRackStatsTask().execute((RowAdapter)getListAdapter());
+	}
 	
 	/**
 	 * Refreshes the list of racks to be displayed in our list.
@@ -181,68 +188,77 @@ public class Favorites extends ListActivity {
 		listItems.addAll(tmpItems);
 	}
 
-	/**
-	 * Retrieve fresh rack stats, and notify listAdapter of any changes.
-	 */
-	public void refreshRackStatistics() {
-		new Thread(new Runnable() {
+	class RefreshRackStatsTask extends AsyncTask<RowAdapter, RowAdapter, Void> {
 
-			public void run() {
+		
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			
+			setProgressBarIndeterminateVisibility(true);
+		}
+		
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			
+			setProgressBarIndeterminateVisibility(false);
+		}
+		
+		@Override
+		protected void onProgressUpdate(RowAdapter... params) {
+			super.onProgressUpdate(params);
+			
+			RowAdapter listAdapter = params[0];
+			listAdapter.notifyDataSetChanged();
+		}
 
-				// Show progressbar
-				runOnUiThread(new Runnable() {
-					public void run() {
-						setProgressBarIndeterminateVisibility(true);
-					}
-				});
+		@Override
+		protected Void doInBackground(RowAdapter... params) {
+			final RowAdapter listAdapter = params[0];
 
-				final RowAdapter listAdapter = (RowAdapter) getListAdapter();
+			// Load all rack statistics
+			for (int i = 0; i < listAdapter.getCount(); i++) {
+				Rack rack = listItems.get(i);
 				
-				// Load all rack statistics
-				for (int i = 0; i < listAdapter.getCount(); i++) {
-					Rack rack = listItems.get(i);
+				try {
+					Rack tmpRack = ocbAdapter.getRack(rack.getId());
 					
-					try {
-						Rack tmpRack = ocbAdapter.getRack(rack.getId());
+					if (tmpRack.hasBikeAndSlotInfo()) {
 						rack.setNumberOfEmptySlots(tmpRack.getNumberOfEmptySlots());
 						rack.setNumberOfReadyBikes(tmpRack.getNumberOfReadyBikes());
-
-					} catch (OsloCityBikeException e) {
-						Log.v("Test", e.getStackTrace().toString());
-
-						// Set negative values to signalize to RowAdapter that communication failed
+					} else {
+						// Set negative values to signalize to RowAdapter rack did not contain any slot/bike info.
 						rack.setNumberOfEmptySlots(-1);
 						rack.setNumberOfReadyBikes(-1);
-
-					} finally {
-						listItems.set(i, rack);
+					}
 						
-						// Refresh list
-						runOnUiThread(new Runnable() {
-							public void run() {
-								listAdapter.notifyDataSetChanged();
-							}
-						});
-					}
+				} catch (OsloCityBikeException e) {
+					Log.v("Test", e.getStackTrace().toString());
+
+					// Set negative values to signalize to RowAdapter that communication failed
+					rack.setNumberOfEmptySlots(-2);
+					rack.setNumberOfReadyBikes(-2);
+
+				} finally {
+					listItems.set(i, rack);
+					publishProgress(listAdapter);
 				}
-
-				// Hide progressbar
-				runOnUiThread(new Runnable() {
-					public void run() {
-						setProgressBarIndeterminateVisibility(false);
-					}
-				});
-
 			}
-		}).start();
+			
+			return null;
+		}
 	}
+	
 	
 	class RowAdapter extends ArrayAdapter<Rack> {
 		Activity context;
+		ArrayList<Rack> items;
 
-		RowAdapter(Activity context) {
-			super(context, R.layout.favorites_row, listItems);
+		RowAdapter(Activity context, int layout, ArrayList<Rack> items) {
+			super(context, layout, items);
 			this.context = context;
+			this.items = items;
 		}
 
 		public View getView(int position, View convertView, ViewGroup parent) {
@@ -263,11 +279,13 @@ public class Favorites extends ListActivity {
 				wrapper = (ViewWrapper)row.getTag();
 			}
 			
-			Rack rack = listItems.get(position);
+			Rack rack = items.get(position);
 			wrapper.getRackName().setText(rack.getDescription());
 
 			// Display number of ready bikes / free slots
 			if (rack.hasBikeAndSlotInfo() && rack.getNumberOfEmptySlots() == -1) {
+				wrapper.getRackInfo().setText(R.string.rackdialog_not_online);
+			} else if (rack.hasBikeAndSlotInfo() && rack.getNumberOfEmptySlots() == -2) {
 				wrapper.getRackInfo().setText(R.string.error_communication_failed);
 			} else if (rack.hasBikeAndSlotInfo()) {
 				String strFreeBikes = getContext().getString(R.string.favorites_freebikes);

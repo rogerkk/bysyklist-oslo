@@ -112,8 +112,7 @@ public class Map extends MapActivity {
 	@Override
     protected void onRestart() {
     	super.onRestart();
-    	rackDb.open();
-    	favoritesDb.open();
+
     }
 	
 	@Override
@@ -130,14 +129,17 @@ public class Map extends MapActivity {
     @Override
     protected void onPause() {
     	super.onPause();
-    	savedLocation = mapView.getMapCenter();
-    	savedZoomLevel = mapView.getZoomLevel();
     	myLocation.disableMyLocation();
     }
     
     @Override
     protected void onStop() {
     	super.onStop();
+    }
+    
+    @Override
+	protected void onDestroy() {
+    	super.onDestroy();
     	rackDb.close();
     	favoritesDb.close();
     }
@@ -297,13 +299,13 @@ public class Map extends MapActivity {
 	}
 
 	/**
-	 * Set up the map with the overlay containing the bike rack represantions
+	 * Set up the map with the overlay containing the bike rack representions
 	 */
 	public void initializeMap() {
 		
 		/*
 		 * Check if rackDb is null here, because this method might be called from RackSyncTask,
-		 * and the Activity may therefore be paused at the time calling. Paused Activity = 
+		 * and the Activity may therefore be dead at the time of calling. Paused Activity = 
 		 * closed DbAdapter
 		 */
 		if (rackDb.isOpen()) {
