@@ -8,6 +8,14 @@
 	<string name="word_slots">låser</string>
 	<string name="word_close">Lukk</string>
 	
+	<string name="map">Kart</string>
+    <string name="favorites">Favoritter</string>
+	<string name="my_location">Min posisjon</string>
+    <string name="nearest_bike">Nærmeste sykkel</string>
+    <string name="find_bike">Sykkel</string>
+    <string name="nearest_slot">Nærmeste lås</string>
+    <string name="find_slot">Lås</string>
+	
 	<string name="syncdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
 	
 	<string name="searchdialog_title">Søker</string>
@@ -24,14 +32,9 @@
 	<string name="favorites_freeslots">Låser: %d</string>
 	<string name="waiting_for_data">Venter på data...</string>
 	
-	<string name="menu_my_location">Min posisjon</string>
 	<string name="menu_more">Mer</string>
 	<string name="menu_update_rack_db">Oppdater stativer</string>
-	<string name="menu_nearest_bike">Nærmeste sykkel</string>
-	<string name="menu_nearest_slot">Nærmeste lås</string>
-	<string name="menu_favorites">Favoritter</string>
 	<string name="menu_refresh_favorites">Oppdater</string>
-	<string name="menu_map">Kart</string>
 	
 	<string name="menu_star_item">Legg til favoritter</string>
 	<string name="menu_unstar_item">Fjern fra favoritter</string>

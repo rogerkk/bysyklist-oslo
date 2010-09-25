@@ -35,15 +35,20 @@ import no.rkkc.bysykkel.db.FavoritesDbAdapter;
 import no.rkkc.bysykkel.db.RackDbAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import no.rkkc.bysykkel.tasks.RackSyncTask;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.DialogInterface.OnCancelListener;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Looper;
+import android.os.Parcelable;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -107,6 +112,8 @@ public class Map extends MapActivity {
         	initializeMap();
         	setProgressBarIndeterminateVisibility(false);
         }
+        
+        processIntent();
     }
 
 	@Override
@@ -119,7 +126,7 @@ public class Map extends MapActivity {
     protected void onStart() {
     	super.onStart();
     }
-    
+
     @Override
     protected void onResume() {
     	super.onResume();
@@ -188,8 +195,8 @@ public class Map extends MapActivity {
 
     @Override
 	public void onCreateContextMenu(ContextMenu  menu, View  v, ContextMenu.ContextMenuInfo menuInfo) {
-		menu.add(Menu.NONE, Menu.FIRST, Menu.NONE, getString(R.string.menu_nearest_bike));
-		menu.add(Menu.NONE, Menu.FIRST+1, Menu.NONE, getString(R.string.menu_nearest_slot));
+		menu.add(Menu.NONE, Menu.FIRST, Menu.NONE, getString(R.string.nearest_bike));
+		menu.add(Menu.NONE, Menu.FIRST+1, Menu.NONE, getString(R.string.nearest_slot));
 	}
 
 	public boolean onContextItemSelected(MenuItem item) {
@@ -288,6 +295,82 @@ public class Map extends MapActivity {
 	        });
 		}
 	}
+	
+	/**
+	 * 
+	 */
+	private void processIntent() {
+		String action = getIntent().getAction();
+    	
+    	if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE")) {
+    		new ShowNearestRackTask(FindRackCriteria.ReadyBike).execute();
+    	} else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")) {
+    		new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
+    	} else if (action.equals("android.intent.action.CREATE_SHORTCUT")) {
+    		// TODO: Put this code into a separate activity, should not be dependent on the map.
+    		setVisible(false);
+    		
+            /*
+             * Setup select contact alert dialog
+             */
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Velg snarvei");
+            String[] items = new String[] {getString(R.string.nearest_bike), getString(R.string.nearest_slot)};
+            
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int item) {
+                	Intent shortcutIntent;
+                	Intent intent;
+                	Parcelable iconResource;
+                	
+                    switch(item) {
+                    case 0:
+                    		shortcutIntent = new Intent("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE");
+	                        
+	                        /*
+	                         * Setup container
+	                         */
+	                        intent = new Intent();
+	                        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+	                        intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getText(R.string.find_bike));
+	                        iconResource = Intent.ShortcutIconResource.fromContext(Map.this, R.drawable.launcher_icon);
+	                        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, iconResource);
+	                        setResult(RESULT_OK, intent);
+
+                    		break;
+                    case 1:
+	                		shortcutIntent = new Intent("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT");
+	                        
+	                        /*
+	                         * Setup container
+	                         */
+	                        intent = new Intent();
+	                        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+	                        intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getText(R.string.find_slot));
+	                        iconResource = Intent.ShortcutIconResource.fromContext(Map.this, R.drawable.launcher_icon);
+	                        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, iconResource);
+	                        setResult(RESULT_OK, intent);
+	
+	                		break;
+	                            
+                    }
+                    dialog.dismiss();
+                    finish();
+                }
+            });
+            
+            Dialog dialog = builder.create();
+            dialog.setOnCancelListener(new OnCancelListener() {
+
+				public void onCancel(DialogInterface dialog) {
+					finish();
+					
+				}
+            });
+            dialog.show();
+		}
+	}
+	
 
 	/**
 	 * Display overview of Oslo. Used when no fix before GPS/GSM has been acquired.
