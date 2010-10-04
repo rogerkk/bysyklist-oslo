@@ -252,7 +252,7 @@ public class Map extends MapActivity {
 		if (settings.getLong("racksUpdatedTime", -1) == -1) {
 			return true;
 		} 
-		
+
 		return false;
 	}
 
@@ -308,6 +308,7 @@ public class Map extends MapActivity {
     		new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
     	} else if (action.equals("android.intent.action.CREATE_SHORTCUT")) {
     		// TODO: Put this code into a separate activity, should not be dependent on the map.
+    		// TODO: Add support for going straight to Favorites
     		setVisible(false);
     		
             /*

@@ -4,6 +4,7 @@ import no.rkkc.bysykkel.Constants.FindRackCriteria;
 import no.rkkc.bysykkel.tasks.RackSyncTask;
 import no.rkkc.bysykkel.views.Favorites;
 import no.rkkc.bysykkel.views.Map;
+import no.rkkc.bysykkel.views.Preferences;
 import android.app.Activity;
 import android.content.Intent;
 import android.view.MenuItem;
@@ -60,6 +61,10 @@ public class MenuHelper {
 	
 	private boolean genericOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
+			case R.id.menuitem_preferences:
+				Intent intent = new Intent(activity, Preferences.class);
+				activity.startActivity(intent);
+				return true;
 		    case R.id.menuitem_rack_sync:
 		    	new RackSyncTask(activity).execute((Void[])null);
 		    	return true;

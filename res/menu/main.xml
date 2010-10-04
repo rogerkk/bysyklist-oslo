@@ -36,6 +36,9 @@
           android:title="@string/menu_more" 
           android:icon="@android:drawable/ic_menu_more">
         <menu>
+            <item android:id="@+id/menuitem_preferences"
+                  android:title="@string/preferences"
+                  />
             <item android:id="@+id/menuitem_rack_sync"
                   android:title="@string/menu_update_rack_db" 
                   />

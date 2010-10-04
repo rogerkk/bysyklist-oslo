@@ -10,6 +10,7 @@
 	
 	<string name="map">Kart</string>
     <string name="favorites">Favoritter</string>
+    <string name="preferences">Innstillinger</string>
 	<string name="my_location">Min posisjon</string>
     <string name="nearest_bike">Nærmeste sykkel</string>
     <string name="find_bike">Sykkel</string>
