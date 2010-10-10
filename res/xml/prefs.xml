@@ -4,10 +4,19 @@
   <ListPreference
     android:key="startup-screen"
     android:title="Oppstartsskjerm"
-    android:summary="Velg hvilken skjerm som åpnes ved oppstart"
+    android:summary="Hvilken skjerm som skal åpnes ved oppstart"
     android:entries="@array/screen"
     android:entryValues="@array/screen_code"
     android:dialogTitle="Velg skjerm"
+    android:defaultValue="MAP"
+    />
+  <ListPreference
+    android:key="map-mode" 
+    android:title="Karttype"
+    android:summary="Vanlig kart eller satellitt"
+    android:entries="@array/mode"
+    android:entryValues="@array/mode_code"
+    android:dialogTitle="Velg karttype"
     android:defaultValue="MAP"
     />
 </PreferenceScreen>

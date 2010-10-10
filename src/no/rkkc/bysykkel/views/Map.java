@@ -126,6 +126,9 @@ public class Map extends MapActivity {
 	@Override
     protected void onStart() {
     	super.onStart();
+    	
+	    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    	mapView.setSatellite(prefs.getString("map-mode", "MAP").equals("SATELLITE"));
     }
 
     @Override
