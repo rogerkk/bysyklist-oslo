@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+  <ListPreference
+    android:key="startup-screen"
+    android:title="Oppstartsskjerm"
+    android:summary="Velg hvilken skjerm som åpnes ved oppstart"
+    android:entries="@array/screen"
+    android:entryValues="@array/screen_code"
+    android:dialogTitle="Velg skjerm"
+    android:defaultValue="MAP"
+    />
+</PreferenceScreen>
