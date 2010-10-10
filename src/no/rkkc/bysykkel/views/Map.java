@@ -311,7 +311,9 @@ public class Map extends MapActivity {
     	} else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")) {
     		new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
 		}
-		Log.v("Map", action);
+		
+		// Set plain Intent so we don't fire these tasks again if we for example switch orientation
+		setIntent(new Intent(this, Map.class));
 	}
 	
 
@@ -419,7 +421,7 @@ public class Map extends MapActivity {
 			public void run() {
 				 Looper.prepare();
 				
-				GeoPoint location = getMyCurrentLocation();
+				GeoPoint location = getMyLocation();
 				
 				if (location != null) {
 					mapController.animateTo(location);
@@ -429,13 +431,35 @@ public class Map extends MapActivity {
 			}).start();
 	}
 	
-	
 	/**
+	 * Retrieve fresh location fix, ignore most-recently-set location
+	 * 
 	 * @return
 	 */
 	private GeoPoint getMyCurrentLocation() {
-
-		GeoPoint location = myLocation.getMyLocation();
+		return getMyLocation(false);
+	}
+	
+	/**
+	 * Retrieve location fix, use most-recently-set if available.
+	 * 
+	 * @return
+	 */
+	private GeoPoint getMyLocation() {
+		return getMyLocation(true);
+	}
+	
+	/**
+	 * 
+	 * @param useLastSet - Whether to allow use of last set location if available, or get fresh location fix.
+	 * @return
+	 */
+	private GeoPoint getMyLocation(boolean useLastSet) {
+		GeoPoint location = null;
+		
+		if (useLastSet) {
+			location = myLocation.getMyLocation();
+		}
 		
 		// Times in seconds
 		int retryTime = 10;
