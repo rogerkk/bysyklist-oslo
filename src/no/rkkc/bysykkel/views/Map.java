@@ -50,6 +50,7 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.os.Parcelable;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -301,74 +302,13 @@ public class Map extends MapActivity {
 	 */
 	private void processIntent() {
 		String action = getIntent().getAction();
-    	
-    	if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE")) {
+		
+		if (action == null) {
+			return;
+		} else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE")) {
     		new ShowNearestRackTask(FindRackCriteria.ReadyBike).execute();
     	} else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")) {
     		new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
-    	} else if (action.equals("android.intent.action.CREATE_SHORTCUT")) {
-    		// TODO: Put this code into a separate activity, should not be dependent on the map.
-    		// TODO: Add support for going straight to Favorites
-    		setVisible(false);
-    		
-            /*
-             * Setup select contact alert dialog
-             */
-            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Velg snarvei");
-            String[] items = new String[] {getString(R.string.nearest_bike), getString(R.string.nearest_slot)};
-            
-            builder.setItems(items, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int item) {
-                	Intent shortcutIntent;
-                	Intent intent;
-                	Parcelable iconResource;
-                	
-                    switch(item) {
-                    case 0:
-                    		shortcutIntent = new Intent("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE");
-	                        
-	                        /*
-	                         * Setup container
-	                         */
-	                        intent = new Intent();
-	                        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-	                        intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getText(R.string.find_bike));
-	                        iconResource = Intent.ShortcutIconResource.fromContext(Map.this, R.drawable.launcher_icon);
-	                        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, iconResource);
-	                        setResult(RESULT_OK, intent);
-
-                    		break;
-                    case 1:
-	                		shortcutIntent = new Intent("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT");
-	                        
-	                        /*
-	                         * Setup container
-	                         */
-	                        intent = new Intent();
-	                        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-	                        intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getText(R.string.find_slot));
-	                        iconResource = Intent.ShortcutIconResource.fromContext(Map.this, R.drawable.launcher_icon);
-	                        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, iconResource);
-	                        setResult(RESULT_OK, intent);
-	
-	                		break;
-	                            
-                    }
-                    dialog.dismiss();
-                    finish();
-                }
-            });
-            
-            Dialog dialog = builder.create();
-            dialog.setOnCancelListener(new OnCancelListener() {
-
-				public void onCancel(DialogInterface dialog) {
-					finish();
-					
-				}
-            });
-            dialog.show();
 		}
 	}
 	
@@ -686,7 +626,7 @@ public class Map extends MapActivity {
 		@Override
 		protected OverlayItem createItem(int i) {
 			Rack rack = racks.get(i);
-			Log.v(Map.TAG, "Adding rack "+rack.getId() + " to overlay");
+//			Log.v(Map.TAG, "Adding rack "+rack.getId() + " to overlay");
 			OverlayItem item = new OverlayItem(rack.getLocation(), rack.getDescription(), Integer.toString(rack.getId()));
 			items.add(item);
 
