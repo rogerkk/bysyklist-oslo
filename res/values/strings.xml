@@ -39,7 +39,7 @@
 	<string name="menu_update_rack_db">Oppdater stativer</string>
 	<string name="menu_refresh_favorites">Oppdater</string>
 	
-	<string name="menu_star_item">Legg til favoritter</string>
+	<string name="menu_star_item">Legg til som favoritt</string>
 	<string name="menu_unstar_item">Fjern fra favoritter</string>
 	
 	<string name="about_app">Om Bysyklist Oslo</string>
