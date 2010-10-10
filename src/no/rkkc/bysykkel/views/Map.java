@@ -37,6 +37,7 @@ import no.rkkc.bysykkel.model.Rack;
 import no.rkkc.bysykkel.tasks.RackSyncTask;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
@@ -109,7 +110,6 @@ public class Map extends MapActivity {
         	setProgressBarIndeterminateVisibility(false);
         }
         
-        processIntent();
     }
 
 	@Override
@@ -122,8 +122,10 @@ public class Map extends MapActivity {
     protected void onStart() {
     	super.onStart();
     	
-	    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
     	mapView.setSatellite(prefs.getString("map-mode", "MAP").equals("SATELLITE"));
+
+    	processIntent();
     }
 
     @Override
@@ -302,14 +304,31 @@ public class Map extends MapActivity {
 		String action = getIntent().getAction();
 		
 		if (action == null) {
+			Log.v("Map", "action=null");
 			return;
 		} else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE")) {
     		new ShowNearestRackTask(FindRackCriteria.ReadyBike).execute();
     	} else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")) {
     		new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
 		}
+		Log.v("Map", action);
 	}
 	
+
+	@Override
+	public void onNewIntent(Intent newIntent) {
+		super.onNewIntent(newIntent);
+		
+		/**
+		 * Needed because we use android:launchMode="singleInstance" in the manifest.
+		 * 
+		 * When a new Intent triggers opening of this activity when it is at the top of
+		 * the activity stack, onNewIntent() is called, but getIntent() will still
+		 * returns the original intent. We want getIntent() to return our new Intent,
+		 * so that our shortcuts work correctly.
+		 */
+		setIntent(newIntent);
+	}
 
 	/**
 	 * Display overview of Oslo. Used when no fix before GPS/GSM has been acquired.
