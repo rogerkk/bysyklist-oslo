@@ -124,8 +124,6 @@ public class Map extends MapActivity {
     	
     	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
     	mapView.setSatellite(prefs.getString("map-mode", "MAP").equals("SATELLITE"));
-
-    	processIntent();
     }
 
     @Override
@@ -298,38 +296,27 @@ public class Map extends MapActivity {
 	}
 	
 	/**
-	 * 
+	 * Check given intent for action that corresponds to one of our shortcuts and perform task.
 	 */
-	private void processIntent() {
-		String action = getIntent().getAction();
+	private void processIntent(Intent intent) {
+		String action = intent.getAction();
 		
 		if (action == null) {
-			Log.v("Map", "action=null");
 			return;
 		} else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE")) {
     		new ShowNearestRackTask(FindRackCriteria.ReadyBike).execute();
     	} else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")) {
     		new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
 		}
-		
-		// Set plain Intent so we don't fire these tasks again if we for example switch orientation
-		setIntent(new Intent(this, Map.class));
 	}
 	
 
 	@Override
 	public void onNewIntent(Intent newIntent) {
 		super.onNewIntent(newIntent);
-		
-		/**
-		 * Needed because we use android:launchMode="singleInstance" in the manifest.
-		 * 
-		 * When a new Intent triggers opening of this activity when it is at the top of
-		 * the activity stack, onNewIntent() is called, but getIntent() will still
-		 * returns the original intent. We want getIntent() to return our new Intent,
-		 * so that our shortcuts work correctly.
-		 */
-		setIntent(newIntent);
+
+		// If we end up here we have probably used one of our shortcuts, find out which.
+		processIntent(newIntent);
 	}
 
 	/**
@@ -740,7 +727,6 @@ public class Map extends MapActivity {
 			}
 			this.criteria = criteria;
 			this.geoPoint = geoPoint;
-			
 		}
 		
 		public ShowNearestRackTask(FindRackCriteria criteria) {
