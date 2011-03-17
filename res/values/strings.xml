@@ -18,7 +18,7 @@
     <string name="find_slot">Lås</string>
 	
 	<string name="syncdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
-	<string name="syncdialog_error">En feil oppsto under oppdateringen. Du kan oppdatere stativene senere, eller forsøke på nytt nå.</string>
+	<string name="syncdialog_error">En feil oppsto under oppdatering av stativer. Dette kan skyldes at ClearChannels tjeneste ikke er tilgjengelig for øyeblikket.\n\nDu kan oppdatere senere, eller forsøke på nytt nå.</string>
 	<string name="syncdialog_retry">Forsøk igjen</string>
 	<string name="syncdialog_later">Senere</string>
 	

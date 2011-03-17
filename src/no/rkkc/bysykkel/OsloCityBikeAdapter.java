@@ -233,12 +233,17 @@ public class OsloCityBikeAdapter {
      * @return
      * @throws Exception 
      */
-    private String makeWebServiceCall(String method) throws IOException, URISyntaxException {
+    private String makeWebServiceCall(String method) throws IOException, URISyntaxException, OsloCityBikeCommunicationException {
         
         httpGet.setURI(new URI("http://smartbikeportal.clearchannel.no/public/mobapp/maq.asmx/".concat(method)));
         
         HttpResponse httpResponse = null;
         httpResponse = httpClient.execute(httpGet);
+        
+        if (httpResponse.getStatusLine().getStatusCode() != 200) {
+        	Log.w(TAG, "Got HTTP status " + Integer.toString(httpResponse.getStatusLine().getStatusCode()) + " from ClearChannel");
+        	throw new OsloCityBikeCommunicationException(null);
+        }
 
         try {
             String returnXml = "";
