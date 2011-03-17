@@ -102,7 +102,6 @@ public class Map extends MapActivity {
 
         if (isFirstRun()) {
     		new RackSyncTask(this).execute((Void[])null);
-    		Log.v("Test", "bla");
         	showOsloOverview();
         } else {
         	setProgressBarIndeterminateVisibility(true);
