@@ -13,18 +13,6 @@ public class RackAdapter extends DatabaseAdapter {
 
     private static final String TAG = "Bysyklist-RackDbAdapter";
     
-    private static String TABLE = "racks";
-    
-    private static String ID = "id";
-    private static String ONLINE = "online";
-    private static String DESCRIPTION = "description";
-    private static String LONGITUDE = "longitude";
-    private static String LATITUDE = "latitude";
-    private static String READY_BIKES = "ready_bikes";
-    private static String EMPTY_LOCKS = "empty_locks";
-    private static String VIEW_COUNTER = "viewcount";
-    private static String STARRED = "starred";
-    
     public RackAdapter(Context context) {
         super(context);
     }

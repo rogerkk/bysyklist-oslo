@@ -9,6 +9,18 @@ import android.util.Log;
 
 public class DatabaseAdapter extends SQLiteOpenHelper {
 
+    public static String TABLE = "racks";
+    
+    public static String ID = "id";
+    public static String ONLINE = "online";
+    public static String DESCRIPTION = "description";
+    public static String LONGITUDE = "longitude";
+    public static String LATITUDE = "latitude";
+    public static String READY_BIKES = "ready_bikes";
+    public static String EMPTY_LOCKS = "empty_locks";
+    public static String VIEW_COUNTER = "viewcount";
+    public static String STARRED = "starred";
+    
     public DatabaseAdapter(Context context) {
         super(context, "citybike", null, 4);
     }
