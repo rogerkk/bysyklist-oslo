@@ -18,6 +18,9 @@
     <string name="find_slot">Lås</string>
 	
 	<string name="syncdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
+	<string name="syncdialog_error">En feil oppsto under oppdateringen. Du kan oppdatere stativene senere, eller forsøke på nytt nå.</string>
+	<string name="syncdialog_retry">Forsøk igjen</string>
+	<string name="syncdialog_later">Senere</string>
 	
 	<string name="searchdialog_title">Søker</string>
 	<string name="searchdialog_message_first">Søker etter ledig %s</string>

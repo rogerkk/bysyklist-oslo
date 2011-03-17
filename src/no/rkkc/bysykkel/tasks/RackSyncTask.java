@@ -59,14 +59,14 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 		syncDialog.dismiss();
 		if (!result) {
        		AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-			builder.setMessage("En feil oppsto under oppdateringen. Du kan oppdatere stativene senere, eller forsøke på nytt nå.")
+			builder.setMessage(R.string.syncdialog_error)
 			       .setCancelable(false)
-			       .setPositiveButton("Forsøk igjen", new DialogInterface.OnClickListener() {
+			       .setPositiveButton(R.string.syncdialog_retry, new DialogInterface.OnClickListener() {
 			           public void onClick(DialogInterface dialog, int id) {
 			        	   new RackSyncTask(activity).execute((Void [])null);
 			           }
 			       })
-			       .setNeutralButton("Senere", new DialogInterface.OnClickListener() {
+			       .setNeutralButton(R.string.syncdialog_later, new DialogInterface.OnClickListener() {
 			           public void onClick(DialogInterface dialog, int id) {
 			                dialog.cancel();
 			           }
