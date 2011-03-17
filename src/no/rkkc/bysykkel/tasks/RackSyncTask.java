@@ -5,8 +5,7 @@ import java.util.ArrayList;
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
-import no.rkkc.bysykkel.db.FavoritesDbAdapter;
-import no.rkkc.bysykkel.db.RackDbAdapter;
+import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import no.rkkc.bysykkel.views.Map;
 import android.app.Activity;
@@ -24,9 +23,8 @@ import android.util.Log;
  */
 public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 	private Activity activity;
-	private RackDbAdapter rackDb;
+	private RackAdapter rackDb;
 	private ProgressDialog syncDialog;
-	private FavoritesDbAdapter favoritesDb;
 	private ArrayList<Integer> failedRackIds = new ArrayList<Integer>();
 	
 	private static final String TAG = "Bysyklist-RackSync";
@@ -35,8 +33,7 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 		super();
 		
 		this.activity = activity;
-        rackDb = new RackDbAdapter(activity).open();
-        favoritesDb = new FavoritesDbAdapter(activity).open();
+        rackDb = new RackAdapter(activity);
 	}
 	
 	@Override
@@ -91,7 +88,6 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 				for (Integer rackId : localRackIds) {
 					if (!remoteRackIds.contains(rackId)) {
 						Log.v(TAG, "Deleting rack with ID ".concat(Integer.toString(rackId)).concat(", as it was not returned by server."));
-						favoritesDb.deleteFavorite(rackId);
 						rackDb.deleteRack(rackId);
 					}
 				}
@@ -114,10 +110,10 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 					localRack.setDescription(remoteRack.getDescription());
 					localRack.setLocation(remoteRack.getLocation());
 					
-					rackDb.updateOrInsertRack(localRack);
+					rackDb.save(localRack);
 				} else {
 					// Insert
-					rackDb.updateOrInsertRack(remoteRack);
+					rackDb.save(remoteRack);
 				}
 				publishProgress();
 			}
