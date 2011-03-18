@@ -21,100 +21,139 @@ package no.rkkc.bysykkel.model;
 import com.google.android.maps.GeoPoint;
 
 public class Rack {
-	private Integer id;
-	private Boolean online;
-	private Integer emptyLocks;
-	private Integer readyBikes;
-	private String description;
-	private GeoPoint location;
-	
-	public Rack(int id, String description, Integer latitude, 
-			Integer longitude, Boolean online, 
-			Integer emptyLocks, Integer readyBikes) {
-		
-		this.id = id;
-		this.online = online;
-		this.description = description;
-		if (latitude != null && longitude != null) {
-			this.location = new GeoPoint(latitude.intValue(), 
-											longitude.intValue());
-		}
-		
-		this.emptyLocks = emptyLocks;
-		this.readyBikes = readyBikes;
-	}
-	
-	public Rack(int id, String description, Integer latitude, Integer longitude) {
-		this(id, description, latitude, longitude, null, null, null);
-	}
-	
+    private Integer id;
+    private String description;
+    private GeoPoint location;
+    private Integer viewCount;
+    private Boolean starred;
+    private Boolean online;
+    private Integer emptyLocks;
+    private Integer readyBikes;
+    
+    public Rack(int id, String description, Integer latitude, 
+            Integer longitude, 
+            Integer viewCount, Boolean starred,
+            Boolean online, Integer emptyLocks, 
+            Integer readyBikes) {
+        
+        this.id = id;
+        this.online = online;
+        this.description = description;
+        if (latitude != null && longitude != null) {
+            this.location = new GeoPoint(latitude.intValue(), 
+                                            longitude.intValue());
+        }
+        
+        this.viewCount = viewCount != null ? viewCount : 0;
+        this.starred    = starred != null ? starred : false;
+        this.emptyLocks = emptyLocks;
+        this.readyBikes = readyBikes;
+    }
+    
+    public Rack(int id, String description, Integer latitude, Integer longitude, Integer viewCount, Boolean starred) {
+        this(id, description, latitude, longitude, viewCount, starred, null, null, null);
+    }
+    
+    public Rack(int id, String description, Integer latitude, Integer longitude, Boolean online, Integer emptyLocks, Integer readyBikes) {
+        this(id, description, latitude, longitude, null, null, online, emptyLocks, readyBikes);
+    }
 
-	public int getId() {
-		return id;
-	}
 
-	public boolean isOnline() {
-		return (online == null) ? false : online;
-	}
+    public int getId() {
+        return id;
+    }
 
-	public boolean hasInfoOnEmptyLocks() {
-		return (emptyLocks == null) ? false : true;
-	}
-	
-	public int getNumberOfEmptySlots() {
-		return emptyLocks;
-	}
-	
-	public void setNumberOfEmptySlots(int emptySlots) {
-		this.emptyLocks = emptySlots;
-	}
-	
-	public boolean hasInfoOnReadyBikes() {
-		return (readyBikes == null) ? false : true;
-	}
+    public boolean isOnline() {
+        return (online == null) ? false : online;
+    }
+    
+    public void setOnline(boolean isOnline) {
+        online = isOnline;
+    }
 
-	public int getNumberOfReadyBikes() {
-		return readyBikes;
-	}
-	
-	public void setNumberOfReadyBikes(int readyBikes) {
-		this.readyBikes = readyBikes;
-	}
-	
-	public boolean hasDescription() {
-		return (description == null) ? false : true;
-	}
+    public boolean hasInfoOnEmptyLocks() {
+        return (emptyLocks == null) ? false : true;
+    }
+    
+    public int getNumberOfEmptySlots() {
+        return emptyLocks;
+    }
+    
+    public void setNumberOfEmptySlots(int emptySlots) {
+        this.emptyLocks = emptySlots;
+    }
+    
+    public boolean hasInfoOnReadyBikes() {
+        return (readyBikes == null) ? false : true;
+    }
 
-	public String getDescription() {
-		return description;
-	}
-	
-	public void setDescription(String description) {
-		this.description = description; 
-	}
+    public int getNumberOfReadyBikes() {
+        return readyBikes;
+    }
+    
+    public void setNumberOfReadyBikes(int readyBikes) {
+        this.readyBikes = readyBikes;
+    }
+    
+    public boolean hasDescription() {
+        return (description == null) ? false : true;
+    }
 
-	public boolean hasLocationInfo() {
-		return (location == null) ? false : true;
-	}
-	
-	public GeoPoint getLocation() {
-		return location;
-	}
-	
-	public void setLocation(GeoPoint location) {
-		this.location = location;
-	}
-	
-	public void setLocation(int latitude, int longitude) {
-		this.location = new GeoPoint(latitude, longitude);
-	}
-	
-	public boolean hasBikeAndSlotInfo() {
-		return hasInfoOnReadyBikes() && hasInfoOnEmptyLocks();
-	}
-	
-	public String toString() {
-		return getId()+": "+getDescription();
-	}
-	
+    public String getDescription() {
+        return description;
+    }
+    
+    public void setDescription(String description) {
+        this.description = description; 
+    }
+
+    public boolean hasLocationInfo() {
+        return (location == null) ? false : true;
+    }
+    
+    public GeoPoint getLocation() {
+        return location;
+    }
+    
+    public void setLocation(GeoPoint location) {
+        this.location = location;
+    }
+    
+    public void setLocation(int latitude, int longitude) {
+        this.location = new GeoPoint(latitude, longitude);
+    }
+    
+    public boolean hasBikeAndSlotInfo() {
+        return hasInfoOnReadyBikes() && hasInfoOnEmptyLocks();
+    }
+    
+    public void setViewCount(Integer viewCount) {
+        this.viewCount = viewCount;
+    }
+    
+    public Integer incrementViewCount() {
+        this.viewCount++;
+        return viewCount;
+    }
+
+    public Integer getViewCount() {
+        return viewCount;
+    }
+
+    public void setStarred(boolean isStarred) {
+        this.starred = isStarred;
+    }
+
+    public Boolean isStarred() {
+        return starred;
+    }
+    
+    public void toggleStarred() {
+        starred = !starred;
+    }
+
+    public String toString() {
+        return getId()+": "+getDescription();
+    }
+    
 }

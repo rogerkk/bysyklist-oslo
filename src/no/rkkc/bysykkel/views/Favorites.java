@@ -7,9 +7,7 @@ import no.rkkc.bysykkel.MenuHelper;
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
-import no.rkkc.bysykkel.db.FavoritesDbAdapter;
-import no.rkkc.bysykkel.db.RackDbAdapter;
-import no.rkkc.bysykkel.model.Favorite;
+import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import android.app.Activity;
 import android.app.Dialog;
@@ -36,8 +34,7 @@ public class Favorites extends ListActivity {
 	TextView selection;
 
 	private OsloCityBikeAdapter ocbAdapter;
-	private FavoritesDbAdapter favDbAdapter;
-	private RackDbAdapter rackDbAdapter;
+	private RackAdapter rackDbAdapter;
 	ArrayList<Rack> listItems = new ArrayList<Rack>();
 	AsyncTask<RowAdapter, RowAdapter, Void> refreshRackStatsTask;
 	
@@ -53,8 +50,7 @@ public class Favorites extends ListActivity {
 		registerForContextMenu(getListView());
 
 		ocbAdapter = (OsloCityBikeAdapter) new OsloCityBikeAdapter();
-		favDbAdapter = (FavoritesDbAdapter) new FavoritesDbAdapter(this).open();
-		rackDbAdapter = (RackDbAdapter) new RackDbAdapter(this).open();
+		rackDbAdapter = (RackAdapter) new RackAdapter(this);
 		setListAdapter(new RowAdapter(this, R.layout.favorites_row, listItems));
 
 	}
@@ -84,7 +80,6 @@ public class Favorites extends ListActivity {
     protected void onDestroy() {
     	super.onDestroy();
     	rackDbAdapter.close();
-    	favDbAdapter.close();
     }
 	
     @Override
@@ -102,9 +97,8 @@ public class Favorites extends ListActivity {
 		AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo; 
 		
 		Rack rack = listItems.get(info.position);
-		Favorite favorite = favDbAdapter.getFavorite(rack.getId());
 		
-		if (favorite.isStarred()) {
+		if (rack.isStarred()) {
 			menu.add(Menu.NONE, CONTEXT_UNSTAR, 0, R.string.menu_unstar_item);
 		} else {
 			menu.add(Menu.NONE, CONTEXT_STAR, 0, R.string.menu_star_item);
@@ -118,7 +112,8 @@ public class Favorites extends ListActivity {
 		Rack rack = listItems.get(menuInfo.position);
 		
 		if (item.getItemId() == CONTEXT_STAR || item.getItemId() == CONTEXT_UNSTAR) {
-			favDbAdapter.toggleStarred(rack.getId());
+			rack.toggleStarred();
+			rackDbAdapter.save(rack);
 			
 			RowAdapter listAdapter = (RowAdapter) getListAdapter();
 			listAdapter.notifyDataSetChanged();
@@ -141,29 +136,10 @@ public class Favorites extends ListActivity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		MenuHelper menuHelper = new MenuHelper(this);
 		return menuHelper.favoriteOptionsItemSelected(item);
-//	    switch (item.getItemId()) { 
-//		    case R.id.menuitem_map:
-//		    	Intent mapIntent = new Intent(this, Map.class);
-//		    	mapIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-//		    	
-//		    	startActivity(mapIntent);
-//		        return true;
-//		    case R.id.menuitem_refresh_favorites:
-//		    	refreshRackStatistics();
-//		    	return true;
-//		    case R.id.menuitem_rack_sync:
-//		    	new RackSyncTask().execute((Void[])null);
-//		    	return true;
-//		    case R.id.menuitem_about:
-//		    	showDialog(DIALOG_ABOUT);
-//		    	return true;
-//	    }
-//	    return false;
 	}
 	
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
-		// TODO Auto-generated method stub
 		return super.onMenuItemSelected(featureId, item);
 	}
 
@@ -175,17 +151,11 @@ public class Favorites extends ListActivity {
 	 * Refreshes the list of racks to be displayed in our list.
 	 */
 	private void refreshListItems() {
-		ArrayList<Favorite> favorites = favDbAdapter.getFavorites();
-		
-		ArrayList<Rack> tmpItems = new ArrayList<Rack>();
-		for (Favorite favorite : favorites) {
-			Rack rack = rackDbAdapter.getRack(favorite.getRackId());
-			tmpItems.add(rack);
-		}
+		ArrayList<Rack> favorites = rackDbAdapter.getFavorites(15);
 	
 		// Not quite sure why assigning tmpItems to listItems won't work, but.. well.. it doesn't.
 		listItems.clear();
-		listItems.addAll(tmpItems);
+		listItems.addAll(favorites);
 	}
 
 	class RefreshRackStatsTask extends AsyncTask<RowAdapter, RowAdapter, Void> {
@@ -299,7 +269,7 @@ public class Favorites extends ListActivity {
 			}
 			
 			// Display favorite icon
-			if (favDbAdapter.isStarred(rack.getId())) {
+			if (rack.isStarred()) {
 				wrapper.getFavoriteIcon().setVisibility(View.VISIBLE);
 			} else {
 				wrapper.getFavoriteIcon().setVisibility(View.INVISIBLE);

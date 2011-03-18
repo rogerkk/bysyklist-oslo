@@ -31,8 +31,7 @@ import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.Toaster;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
-import no.rkkc.bysykkel.db.FavoritesDbAdapter;
-import no.rkkc.bysykkel.db.RackDbAdapter;
+import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import no.rkkc.bysykkel.tasks.RackSyncTask;
 import android.app.Dialog;
@@ -71,8 +70,7 @@ public class Map extends MapActivity {
 	private MapView mapView;
 	private MyLocationOverlay myLocation;
 	private MapController mapController;
-	private RackDbAdapter rackDb;
-	private FavoritesDbAdapter favoritesDb;
+	private RackAdapter rackDb;
 	private OsloCityBikeAdapter osloCityBikeAdapter;
 	private ViewHolder viewHolder = new ViewHolder();
 	private RacksOverlay rackOverlay; 
@@ -90,8 +88,7 @@ public class Map extends MapActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        rackDb = new RackDbAdapter(Map.this).open();
-        favoritesDb = new FavoritesDbAdapter(Map.this).open();
+        rackDb = new RackAdapter(Map.this);
         osloCityBikeAdapter = new OsloCityBikeAdapter();
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 
@@ -102,7 +99,6 @@ public class Map extends MapActivity {
 
         if (isFirstRun()) {
     		new RackSyncTask(this).execute((Void[])null);
-    		Log.v("Test", "bla");
         	showOsloOverview();
         } else {
         	setProgressBarIndeterminateVisibility(true);
@@ -147,7 +143,6 @@ public class Map extends MapActivity {
 	protected void onDestroy() {
     	super.onDestroy();
     	rackDb.close();
-    	favoritesDb.close();
     }
     
     @Override
@@ -332,17 +327,9 @@ public class Map extends MapActivity {
 	 * Set up the map with the overlay containing the bike rack representions
 	 */
 	public void initializeMap() {
-		
-		/*
-		 * Check if rackDb is null here, because this method might be called from RackSyncTask,
-		 * and the Activity may therefore be dead at the time of calling. Paused Activity = 
-		 * closed DbAdapter
-		 */
-		if (rackDb.isOpen()) {
-			rackOverlay = initializeRackOverlay(rackDb.getRacks());
-			mapView.getOverlays().add(rackOverlay);  
-			mapView.invalidate();
-		}
+	    rackOverlay = initializeRackOverlay(rackDb.getRacks());
+		mapView.getOverlays().add(rackOverlay);  
+		mapView.invalidate();
 	}
 
 	/**
@@ -527,7 +514,8 @@ public class Map extends MapActivity {
 		viewHolder.infoPanel.setVisibility(View.VISIBLE);
 		viewHolder.infoPanel.getStatusInfo();
 		
-		favoritesDb.incrementCounter(rack.getId());
+		rack.incrementViewCount();
+		rackDb.save(rack);
 	}
 	
 	public void hideRackInfo() {
@@ -561,7 +549,9 @@ public class Map extends MapActivity {
 			}
 		});
 		
-		favoritesDb.incrementCounter(rackId);
+		Rack rack = rackDb.getRack(rackId);
+		rack.incrementViewCount();
+		rackDb.save(rack);
 	}
 	
 	public void highlightRack(Integer rackId) {
