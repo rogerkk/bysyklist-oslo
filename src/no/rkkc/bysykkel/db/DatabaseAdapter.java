@@ -56,13 +56,6 @@ public class DatabaseAdapter extends SQLiteOpenHelper {
                 db.update("racks", cv, "id=?", new String[]{cursor.getString(0)} );
             }
         }
-        
-        // TODO: Remove this stuff before release
-        Cursor cursor2 = db.rawQuery("SELECT * FROM racks", null);
-        
-        while (cursor2.moveToNext()) {
-            Log.v("DBHelper", "id: " + cursor2.getString(0) + ", name: " + cursor2.getString(1) + ", viewcount: " + cursor2.getString(4) + ", starred: " + cursor2.getString(5));
-        }
     }
 
     private void createRacksTable(SQLiteDatabase db) {
