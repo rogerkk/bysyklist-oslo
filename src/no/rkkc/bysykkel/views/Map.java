@@ -95,18 +95,51 @@ public class Map extends MapActivity {
         setContentView(R.layout.map);
         setupMapView();
         setupInfoPanel();
-        setupMyLocation(savedInstanceState);
-
-        if (isFirstRun()) {
-    		new RackSyncTask(this).execute((Void[])null);
-        	showOsloOverview();
-        } else {
-        	setProgressBarIndeterminateVisibility(true);
-        	initializeMap();
-        	setProgressBarIndeterminateVisibility(false);
-        }
+        setupMyLocation();
         
+        if (isFirstRun()) {
+        	new RackSyncTask(this).execute((Void[])null);
+        	return;
+        }
+
+        initializeMap();
+
+		if (savedInstanceState != null) {
+			// Config change (rotation?)
+			restoreZoomAndCenter(savedInstanceState);
+		} else if (getIntent().getBooleanExtra("FindNearest", false)) {
+			// Opened by shortcut for finding nearest lock/bike
+			processIntent(getIntent());
+		} else {
+			// Default and most common action.
+			animateToLastKnownLocationIfAvailable();
+	        animateToMyLocationOnFirstFix();
+		}
     }
+
+	public void animateToMyLocationOnFirstFix() {
+		myLocation.runOnFirstFix(new Runnable() {
+			public void run() {
+				mapController.setZoom(16);
+				animateToMyLocation();
+			}
+		});
+	}
+
+	private void animateToLastKnownLocationIfAvailable() {
+		GeoPoint recentLocation = myLocation.getMyLocation();
+		if (recentLocation != null) {
+			mapController.animateTo(recentLocation);
+		} else {
+			showOsloOverview();
+		}
+	}
+
+	private void restoreZoomAndCenter(Bundle savedInstanceState) {
+		GeoPoint point = new GeoPoint((int)savedInstanceState.getFloat("Latitude"), (int)savedInstanceState.getFloat("Longitude"));
+		mapController.setZoom(savedInstanceState.getInt("ZoomLevel"));
+		mapController.setCenter(point);
+	}
 
 	@Override
     protected void onRestart() {
@@ -265,29 +298,10 @@ public class Map extends MapActivity {
 	    viewHolder.information = (TextView) findViewById(R.id.information);
 	}
 
-	private void setupMyLocation(Bundle savedInstanceState) {
+	private void setupMyLocation() {
 		myLocation = new MyLocationOverlay(this, mapView);
 		myLocation.enableMyLocation();
 		mapView.getOverlays().add(myLocation);
-	
-		if (savedInstanceState != null) {
-			GeoPoint point = new GeoPoint((int)savedInstanceState.getFloat("Latitude"), (int)savedInstanceState.getFloat("Longitude"));
-			mapController.setZoom(savedInstanceState.getInt("ZoomLevel"));
-			mapController.setCenter(point);
-		} else {
-	        GeoPoint recentLocation = myLocation.getMyLocation();
-			if (recentLocation != null) {
-				mapController.animateTo(recentLocation);
-			} else {
-				showOsloOverview();
-			}
-	        myLocation.runOnFirstFix(new Runnable() {
-				public void run() {
-					mapController.setZoom(16);
-					animateToMyLocation();
-				}
-	        });
-		}
 	}
 	
 	/**

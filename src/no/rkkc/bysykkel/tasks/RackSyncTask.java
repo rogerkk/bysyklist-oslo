@@ -52,6 +52,7 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
 		super.onPostExecute(result);
 		if (activity instanceof Map) {
 			((Map)activity).initializeMap();
+			((Map)activity).animateToMyLocationOnFirstFix();
 		}
 		syncDialog.dismiss();
 		if (!result) {
