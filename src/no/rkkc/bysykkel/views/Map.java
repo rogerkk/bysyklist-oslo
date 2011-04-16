@@ -161,7 +161,7 @@ public class Map extends MapActivity {
     @Override
     protected void onResume() {
     	super.onResume();
-    	rackStateThread.enable();
+//    	rackStateThread.enable();
     	myLocation.enableMyLocation();
     }
     
@@ -169,7 +169,7 @@ public class Map extends MapActivity {
     protected void onPause() {
     	super.onPause();
     	myLocation.disableMyLocation();
-    	rackStateThread.disable();
+//    	rackStateThread.disable();
     }
     
     @Override
@@ -358,14 +358,11 @@ public class Map extends MapActivity {
 	 * @return {@link RacksOverlay}
 	 */
 	private RacksOverlay initializeRackOverlay(ArrayList<Rack> racks) {
-		Drawable default_marker = getResources().getDrawable(R.drawable.bubble);
+		Drawable default_marker = getResources().getDrawable(R.drawable.bubble_red);
 		default_marker.setBounds(0, 0, default_marker.getIntrinsicWidth(), default_marker
 				.getIntrinsicHeight());
-		Drawable highlighted_marker = getResources().getDrawable(R.drawable.bubble_highlighted);
-		highlighted_marker.setBounds(0, 0, highlighted_marker.getIntrinsicWidth(), highlighted_marker
-				.getIntrinsicHeight());
 		
-	    RacksOverlay rackOverlay = new RacksOverlay(default_marker, highlighted_marker, racks);
+	    RacksOverlay rackOverlay = new RacksOverlay(default_marker, racks);
 		return rackOverlay;
 	}
 
@@ -625,39 +622,95 @@ public class Map extends MapActivity {
 		private List<OverlayItem> items = new ArrayList<OverlayItem>();
 		private ArrayList<Rack> racks;
 		private Integer highlightedIndex;
-		private Drawable default_marker;
-		private Drawable highlight_marker;
+
+		/**
+		 * Marker indicating that there are both free bikes and locks
+		 */
+		private Drawable ok_marker;
 		
-		public RacksOverlay(Drawable default_marker, Drawable highlight_marker, ArrayList<Rack> racks) {
+		/**
+		 * Marker indicating that the rack has either bikes or locks
+		 */
+		private Drawable partial_marker;
+		
+		/**
+		 * Marker indicating that we do not know status of rack.
+		 */
+		private Drawable unknown_marker;
+		
+		/**
+		 * Marker indicating that user is viewing the info popup of a rack.
+		 */
+		private Drawable info_marker;
+		
+		public RacksOverlay(Drawable default_marker, ArrayList<Rack> racks) {
 			super(default_marker);
 			this.racks = racks;
+			this.unknown_marker = default_marker;
 			
-			setupMarkers(default_marker, highlight_marker);
-			
+			setupMarkers();
 			populate();
 		}
 		
-		private void setupMarkers(Drawable default_marker, Drawable highlight_marker) {
-			boundCenterBottom(default_marker);
-			boundCenterBottom(highlight_marker);
+		private void setupMarkers() {
+			partial_marker = getResources().getDrawable(R.drawable.bubble_yellow);
+			partial_marker.setBounds(0, 0, partial_marker.getIntrinsicWidth(), partial_marker
+					.getIntrinsicHeight());
 			
-			this.default_marker = default_marker;
-			this.highlight_marker = highlight_marker;
+			ok_marker = getResources().getDrawable(R.drawable.bubble_green);
+			ok_marker.setBounds(0, 0, ok_marker.getIntrinsicWidth(), ok_marker
+					.getIntrinsicHeight());
+			
+			info_marker = getResources().getDrawable(R.drawable.bubble_info);
+			info_marker.setBounds(0, 0, info_marker.getIntrinsicWidth(), info_marker
+					.getIntrinsicHeight());
+			
+			boundCenterBottom(partial_marker);
+			boundCenterBottom(ok_marker);
+			boundCenterBottom(info_marker);
+			boundCenterBottom(unknown_marker);
 		}
 		
 		public void highlightRack(int rackId) {
-			highlightIndex(findOverlayIndex(rackId));
+			highlightedIndex = findOverlayIndex(rackId);
+			setMarker(highlightedIndex, info_marker);
 		}
 		
-		public void highlightIndex(int overlayIndex) {
-			highlightedIndex = overlayIndex;
-			getItem(overlayIndex).setMarker(highlight_marker);
-			mapView.invalidate();
+//		/**
+//		 * Display the marker indicating that we do not know the status of this rack.
+//		 * 
+//		 * @param rackId
+//		 */
+//		public void setUnknownMarker(int rackId) {
+//			setMarker(findOverlayIndex(rackId), unknown_marker);
+//		}
+//		
+//		/**
+//		 * Display the marker indicating that there are either free bikes or locks, but not both.
+//		 * 
+//		 * @param rackId
+//		 */
+//		public void setPartialMarker(int rackId) {
+//			setMarker(findOverlayIndex(rackId), partial_marker);
+//		}
+//		
+//		/**
+//		 * Display the marker indicating that there are both free bikes and locks.
+//		 * 
+//		 * @param rackId
+//		 */
+//		public void setOkMarker(int rackId) {
+//			setMarker(findOverlayIndex(rackId), ok_marker);
+//		}
+		
+		public void setMarker(int overlayIndex, Drawable marker) {
+			getItem(overlayIndex).setMarker(marker);
+			mapView.postInvalidate();
 		}
 
 		public void resetHighlighting() {
 			if (highlightedIndex != null) {
-				getItem(highlightedIndex).setMarker(default_marker);
+				getItem(highlightedIndex).setMarker(unknown_marker);
 				highlightedIndex = null;
 			}
 		}
@@ -841,7 +894,7 @@ public class Map extends MapActivity {
 	                  Integer[] rackIds = rackDb.getRackIds(new GeoPoint(59912307, 1076128), 
                               new GeoPoint(5990611, 10776043)); // Get coordinates of map.
 	                  
-	                  for (int rackId: rackIds) {
+	                  for (final int rackId: rackIds) {
 	                      if (mHandler.hasMessages(UPDATE_VISIBLE_RACKS)) {
 	                          Log.v(TAG, "BREAK");
 	                          // A new massage has come in, these racks are no longer interesting.
@@ -849,10 +902,25 @@ public class Map extends MapActivity {
 	                      }
 	                      
 	                      try {
-	                          Rack rack = osloCityBikeAdapter.getRack(rackId);
-	                          rackOverlay.highlightRack(rack.getId());    
+	                    	  final Rack rack = osloCityBikeAdapter.getRack(rackId);
+	    	                  runOnUiThread(new Runnable() {
+	    	                        public void run() {
+	    	                        	if (rack.hasBikeAndSlotInfo() && rack.hasReadyBikes() && rack.hasEmptySlots()) {
+//	    	                        		rackOverlay.setOkMarker(rack.getId());
+	    	                        	} else if (rack.hasBikeAndSlotInfo() && (rack.hasReadyBikes() || rack.hasEmptySlots())) {
+//	    	                        		rackOverlay.setPartialMarker(rack.getId());
+	    	                        	} else {
+//	    	                        		rackOverlay.setUnknownMarker(rack.getId());
+	    	                        	}
+	    	                        	
+	    	                        }
+	    	                  });
 	                      } catch (OsloCityBikeException e) {
-	                          // TODO: Show marker with question mark to signal unknown state.
+	    	                  runOnUiThread(new Runnable() {
+	    	                        public void run() {
+//	    	                        	rackOverlay.setUnknownMarker(rackId);   
+	    	                        }
+	    	                  });
 	                      }
 	                  }
 	                  
