@@ -43,7 +43,9 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -74,6 +76,7 @@ public class Map extends MapActivity {
 	private OsloCityBikeAdapter osloCityBikeAdapter;
 	private ViewHolder viewHolder = new ViewHolder();
 	private RacksOverlay rackOverlay; 
+	private RackStateThread rackStateThread = new RackStateThread();
 	
 	private GeoPoint contextMenuGeoPoint = null;
 	private LongpressHelper contextMenuHelper = new LongpressHelper();
@@ -158,6 +161,7 @@ public class Map extends MapActivity {
     @Override
     protected void onResume() {
     	super.onResume();
+    	rackStateThread.enable();
     	myLocation.enableMyLocation();
     }
     
@@ -165,6 +169,7 @@ public class Map extends MapActivity {
     protected void onPause() {
     	super.onPause();
     	myLocation.disableMyLocation();
+    	rackStateThread.disable();
     }
     
     @Override
@@ -273,7 +278,7 @@ public class Map extends MapActivity {
 		
 		return super.dispatchTouchEvent(event);
 	}
-
+	
 	private boolean isFirstRun() {
 		SharedPreferences settings = getPreferences(MODE_PRIVATE);
 		if (settings.getLong("racksUpdatedTime", -1) == -1) {
@@ -289,6 +294,7 @@ public class Map extends MapActivity {
 	    mapView.setBuiltInZoomControls(true);
 	    registerForContextMenu(mapView);
 	    mapController = mapView.getController();
+	    
 	}
 
 	private void setupInfoPanel() {
@@ -646,6 +652,7 @@ public class Map extends MapActivity {
 		public void highlightIndex(int overlayIndex) {
 			highlightedIndex = overlayIndex;
 			getItem(overlayIndex).setMarker(highlight_marker);
+			mapView.invalidate();
 		}
 
 		public void resetHighlighting() {
@@ -684,7 +691,7 @@ public class Map extends MapActivity {
 			
 			return true;
 		}
-		
+
 		private Rack findRack(int overlayIndex) {
 			Rack rack = null;
 			for (int i = 0; i < racks.size(); i++) {
@@ -811,6 +818,75 @@ public class Map extends MapActivity {
 			return Integer.toString(noOfFreeItems) + " " + itemType;
 		}
 		
+	}
+	
+	class RackStateThread extends Thread {
+	      static final int UPDATE_VISIBLE_RACKS = 1;
+	      public Handler mHandler;
+	      private boolean isDisabled;
+
+	      public void run() {
+	          Looper.prepare();
+
+	          mHandler = new Handler() {
+	              public void handleMessage(Message msg) {
+	                  mHandler.removeMessages(UPDATE_VISIBLE_RACKS);
+	                  
+	                  runOnUiThread(new Runnable() {
+                        public void run() {
+                            setProgressBarIndeterminateVisibility(true);
+                        }
+	                  });
+	                  
+	                  Integer[] rackIds = rackDb.getRackIds(new GeoPoint(59912307, 1076128), 
+                              new GeoPoint(5990611, 10776043)); // Get coordinates of map.
+	                  
+	                  for (int rackId: rackIds) {
+	                      if (mHandler.hasMessages(UPDATE_VISIBLE_RACKS)) {
+	                          Log.v(TAG, "BREAK");
+	                          // A new massage has come in, these racks are no longer interesting.
+	                          break;
+	                      }
+	                      
+	                      try {
+	                          Rack rack = osloCityBikeAdapter.getRack(rackId);
+	                          rackOverlay.highlightRack(rack.getId());    
+	                      } catch (OsloCityBikeException e) {
+	                          // TODO: Show marker with question mark to signal unknown state.
+	                      }
+	                  }
+	                  
+                      runOnUiThread(new Runnable() {
+                          public void run() {
+                              setProgressBarIndeterminateVisibility(false);
+                          }
+                      });
+                      
+	                  if (!isDisabled) {
+	                      mHandler.sendEmptyMessageDelayed(UPDATE_VISIBLE_RACKS, 15000);
+	                  }
+	              }
+	          };
+
+	          mHandler.sendEmptyMessage(UPDATE_VISIBLE_RACKS);
+	          Looper.loop();
+	      }
+
+        public void enable() {
+            isDisabled = false;
+            if (!isAlive()) {
+                this.start();
+            } else {
+                mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
+            }
+        }
+
+        public void disable() {
+            mHandler.removeMessages(RackStateThread.UPDATE_VISIBLE_RACKS);
+            isDisabled = true;
+        }
+	      
+	      
 	}
 	
 

@@ -9,21 +9,11 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 
+import com.google.android.maps.GeoPoint;
+
 public class RackAdapter extends DatabaseAdapter {
 
     private static final String TAG = "Bysyklist-RackDbAdapter";
-    
-    private static String TABLE = "racks";
-    
-    private static String ID = "id";
-    private static String ONLINE = "online";
-    private static String DESCRIPTION = "description";
-    private static String LONGITUDE = "longitude";
-    private static String LATITUDE = "latitude";
-    private static String READY_BIKES = "ready_bikes";
-    private static String EMPTY_LOCKS = "empty_locks";
-    private static String VIEW_COUNTER = "viewcount";
-    private static String STARRED = "starred";
     
     public RackAdapter(Context context) {
         super(context);
@@ -120,6 +110,33 @@ public class RackAdapter extends DatabaseAdapter {
         while (cursor.moveToNext()) {
             rackIds.add(cursor.getInt(cursor.getColumnIndex(ID)));
         }
+        cursor.close();
+        
+        return rackIds;
+    }
+    
+    public Integer[] getRackIds(GeoPoint topLeft, GeoPoint bottomRight) {
+        String[] columns={ID};
+        
+        String maxLatitude = Integer.toString(topLeft.getLatitudeE6());
+        String minLongitude = Integer.toString(topLeft.getLongitudeE6());
+        String minLatitude = Integer.toString(bottomRight.getLatitudeE6());
+        String maxLongitude = Integer.toString(bottomRight.getLongitudeE6());
+        
+        String[] queryParams = new String[] {minLatitude, maxLatitude, minLongitude, maxLongitude}; 
+        
+        Cursor cursor = getReadableDatabase().query(TABLE, columns, 
+                "latitude > ? and latitude < ? and longitude > ? and longitude < ?", queryParams,
+                null, null, null);
+        
+        Integer[] rackIds = new Integer[cursor.getCount()];
+        for (int i = 0; i < cursor.getCount(); i++) {
+            cursor.moveToNext();
+            rackIds[i] = cursor.getInt(cursor.getColumnIndex(ID));
+        }
+//        while (cursor.moveToNext()) {
+//            rackIds.add(cursor.getInt(cursor.getColumnIndex(ID)));
+//        }
         cursor.close();
         
         return rackIds;

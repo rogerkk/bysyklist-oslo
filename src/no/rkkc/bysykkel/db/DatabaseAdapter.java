@@ -9,6 +9,18 @@ import android.util.Log;
 
 public class DatabaseAdapter extends SQLiteOpenHelper {
 
+    public static String TABLE = "racks";
+    
+    public static String ID = "id";
+    public static String ONLINE = "online";
+    public static String DESCRIPTION = "description";
+    public static String LONGITUDE = "longitude";
+    public static String LATITUDE = "latitude";
+    public static String READY_BIKES = "ready_bikes";
+    public static String EMPTY_LOCKS = "empty_locks";
+    public static String VIEW_COUNTER = "viewcount";
+    public static String STARRED = "starred";
+    
     public DatabaseAdapter(Context context) {
         super(context, "citybike", null, 4);
     }
@@ -43,13 +55,6 @@ public class DatabaseAdapter extends SQLiteOpenHelper {
                 cv.put("starred", cursor.getInt(2));
                 db.update("racks", cv, "id=?", new String[]{cursor.getString(0)} );
             }
-        }
-        
-        // TODO: Remove this stuff before release
-        Cursor cursor2 = db.rawQuery("SELECT * FROM racks", null);
-        
-        while (cursor2.moveToNext()) {
-            Log.v("DBHelper", "id: " + cursor2.getString(0) + ", name: " + cursor2.getString(1) + ", viewcount: " + cursor2.getString(4) + ", starred: " + cursor2.getString(5));
         }
     }
 
