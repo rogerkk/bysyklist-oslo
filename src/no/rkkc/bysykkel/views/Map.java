@@ -20,6 +20,7 @@ package no.rkkc.bysykkel.views;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -27,8 +28,6 @@ import no.rkkc.bysykkel.Constants;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
 import no.rkkc.bysykkel.LongpressHelper;
 import no.rkkc.bysykkel.MenuHelper;
-import no.rkkc.bysykkel.OsloCityBikeAdapter;
-import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.Toaster;
 import no.rkkc.bysykkel.db.RackAdapter;
@@ -56,7 +55,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
-import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -73,10 +71,10 @@ public class Map extends MapActivity {
 	private MyLocationOverlay myLocation;
 	private MapController mapController;
 	private RackAdapter rackDb;
-	private OsloCityBikeAdapter osloCityBikeAdapter;
 	private ViewHolder viewHolder = new ViewHolder();
 	private RacksOverlay rackOverlay; 
 	private RackStateThread rackStateThread = new RackStateThread();
+	private HashMap<Integer, RackState> rackStateCache = new HashMap<Integer, RackState>();
 	
 	private GeoPoint contextMenuGeoPoint = null;
 	private LongpressHelper contextMenuHelper = new LongpressHelper();
@@ -92,7 +90,6 @@ public class Map extends MapActivity {
         super.onCreate(savedInstanceState);
 
         rackDb = new RackAdapter(Map.this);
-        osloCityBikeAdapter = new OsloCityBikeAdapter();
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 
         setContentView(R.layout.map);
@@ -121,15 +118,14 @@ public class Map extends MapActivity {
 		
 	    mapView.setOnZoomChangeListener(new BysyklistMapView.OnZoomChangeListener() {
 			public void onZoomChange(MapView view, int newZoom, int oldZoom) {
-				Log.v(TAG, "onZoomChange");
 				rackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
 			}
 	    });
 
 	    mapView.setOnPanChangeListener(new BysyklistMapView.OnPanChangeListener() {
 	        public void onPanChange(MapView view, GeoPoint newCenter, GeoPoint oldCenter) {
-	        	Log.v(TAG, "onPanChange");
-	        	rackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);	        }
+	        	rackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);	 
+	        }
 	    });
 
     }
@@ -527,23 +523,16 @@ public class Map extends MapActivity {
 		Rack foundRack = null;
 		Rack rack = null;
 		for (LocationAndDistance lad : sortedStationLocations) {
-			try {
-				rack = osloCityBikeAdapter.getRack(lad.getStationIndex());
-				
-				if (!rack.hasBikeAndSlotInfo()) continue; // Sometimes we get no information from the rack, so just skip it.
-				
-				if ((criteria == FindRackCriteria.ReadyBike && rack.getNumberOfReadyBikes() > 0)
-						|| (criteria == FindRackCriteria.FreeSlot && 
-								rack.getNumberOfEmptySlots() > 0)) {
-					foundRack = rack;
-                    Log.v(Map.TAG, "Found station:" + foundRack);
-					break;
-				}
-			} catch (OsloCityBikeException e) {
-				// TODO: find a way to display the fact that some nearer stations don't have status information available
-				Log.w(Map.TAG, "Didn't get info on number of ready bikes and free locks");
-				Log.w(Map.TAG, e.getStackTrace().toString());
-				continue;
+			rack = rackDb.getRack(lad.getStationIndex(), true);
+			
+			if (!rack.hasBikeAndSlotInfo()) continue; // Sometimes we get no information from the rack, so just skip it.
+			
+			if ((criteria == FindRackCriteria.ReadyBike && rack.getNumberOfReadyBikes() > 0)
+					|| (criteria == FindRackCriteria.FreeSlot && 
+							rack.getNumberOfEmptySlots() > 0)) {
+				foundRack = rack;
+                Log.v(Map.TAG, "Found station:" + foundRack);
+				break;
 			}
 		}
 		
@@ -647,7 +636,7 @@ public class Map extends MapActivity {
 	private class RacksOverlay extends ItemizedOverlay<OverlayItem> {
 		private List<OverlayItem> items = new ArrayList<OverlayItem>();
 		private ArrayList<Rack> racks;
-		private Integer highlightedIndex;
+		private Integer highlightedRackId;
 
 		/**
 		 * Marker indicating that there are both free bikes and locks
@@ -669,14 +658,6 @@ public class Map extends MapActivity {
 		 */
 		private Drawable info_marker;
 		
-		/**
-		 * Storage for original marker when opening info window. This way we can reset the marker
-		 * when info window is closed. 
-		 * 
-		 * set
-		 */
-		private Drawable tmp_marker;
-
 		public RacksOverlay(Drawable default_marker, ArrayList<Rack> racks) {
 			super(default_marker);
 			this.racks = racks;
@@ -706,8 +687,8 @@ public class Map extends MapActivity {
 		}
 		
 		public void highlightRack(int rackId) {
-			highlightedIndex = findOverlayIndex(rackId);
-			setMarker(highlightedIndex, info_marker);
+			highlightedRackId = rackId;
+			setMarker(rackId, info_marker);
 		}
 		
 		/**
@@ -716,7 +697,7 @@ public class Map extends MapActivity {
 		 * @param rackId
 		 */
 		public void setUnknownMarker(int rackId) {
-			setMarker(findOverlayIndex(rackId), unknown_marker);
+			setMarker(rackId, unknown_marker);
 		}
 		
 		/**
@@ -725,7 +706,7 @@ public class Map extends MapActivity {
 		 * @param rackId
 		 */
 		public void setPartialMarker(int rackId) {
-			setMarker(findOverlayIndex(rackId), partial_marker);
+			setMarker(rackId, partial_marker);
 		}
 		
 		/**
@@ -734,18 +715,33 @@ public class Map extends MapActivity {
 		 * @param rackId
 		 */
 		public void setOkMarker(int rackId) {
-			setMarker(findOverlayIndex(rackId), ok_marker);
+			setMarker(rackId, ok_marker);
 		}
 		
-		public void setMarker(int overlayIndex, Drawable marker) {
-			getItem(overlayIndex).setMarker(marker);
+		public void setMarker(int rackId, Drawable marker) {
+			getItem(findOverlayIndex(rackId)).setMarker(marker);
 			mapView.postInvalidate();
+		}
+		
+		/**
+		 * Sets the marker drawable according to the state stored in the given Rack.
+		 * 
+		 * @param rack 
+		 */
+		public void setMarker(Rack rack) {
+        	if (rack.isOnline() && rack.hasBikeAndSlotInfo() && rack.hasReadyBikes() && rack.hasEmptySlots()) {
+        		setOkMarker(rack.getId());
+        	} else if (rack.isOnline() && rack.hasBikeAndSlotInfo() && (rack.hasReadyBikes() || rack.hasEmptySlots())) {
+        		setPartialMarker(rack.getId());
+        	} else {
+        		setUnknownMarker(rack.getId());
+        	}
 		}
 
 		public void resetHighlighting() {
-			if (highlightedIndex != null) {
-				getItem(highlightedIndex).setMarker(unknown_marker);
-				highlightedIndex = null;
+			if (highlightedRackId != null) {
+				setMarker(getRackState(highlightedRackId).getRack());
+				highlightedRackId = null;
 			}
 		}
 		
@@ -915,6 +911,7 @@ public class Map extends MapActivity {
 	 * update is postponed.
 	 */
 	class RackStateThread extends Thread {
+	      private static final int TIME_BETWEEN_UPDATES = 60000;
 	      static final int UPDATE_VISIBLE_RACKS = 1;
 	      public Handler mHandler;
 	      private boolean isDisabled;
@@ -948,27 +945,23 @@ public class Map extends MapActivity {
 	                          break;
 	                      }
 	                      
-	                      try {
-	                    	  final Rack rack = osloCityBikeAdapter.getRack(rackId);
-	    	                  runOnUiThread(new Runnable() {
-	    	                        public void run() {
-	    	                        	if (rack.isOnline() && rack.hasBikeAndSlotInfo() && rack.hasReadyBikes() && rack.hasEmptySlots()) {
-	    	                        		rackOverlay.setOkMarker(rack.getId());
-	    	                        	} else if (rack.isOnline() && rack.hasBikeAndSlotInfo() && (rack.hasReadyBikes() || rack.hasEmptySlots())) {
-	    	                        		rackOverlay.setPartialMarker(rack.getId());
-	    	                        	} else {
-	    	                        		rackOverlay.setUnknownMarker(rack.getId());
-	    	                        	}
-	    	                        	
-	    	                        }
-	    	                  });
-	                      } catch (OsloCityBikeException e) {
-	    	                  runOnUiThread(new Runnable() {
-	    	                        public void run() {
-	    	                        	rackOverlay.setUnknownMarker(rackId);   
-	    	                        }
-	    	                  });
+	                      final Rack rack;
+	                      if (rackStateCache.get(rackId) != null && !rackStateCache.get(rackId).isStale()) {
+	                    	  // Get cached rack
+	                    	  rack = getRackState(rackId).getRack();
+	                      } else {
+	                    	  rack = rackDb.getRack(rackId, true);
+	                    	  setRackState(rack);
 	                      }
+                    	  
+    	                  runOnUiThread(new Runnable() {
+    	                        public void run() {
+    	                        	if (rackOverlay.highlightedRackId == null ||
+    	                        			rack.getId() != rackOverlay.highlightedRackId) {
+    	                        		rackOverlay.setMarker(rack);
+    	                        	}
+    	                        }
+    	                  });
 	                  }
 	                  
                       runOnUiThread(new Runnable() {
@@ -978,12 +971,20 @@ public class Map extends MapActivity {
                       });
                       
 	                  if (!isDisabled) {
-	                      mHandler.sendEmptyMessageDelayed(UPDATE_VISIBLE_RACKS, 60000);
+	                      mHandler.sendEmptyMessageDelayed(UPDATE_VISIBLE_RACKS, TIME_BETWEEN_UPDATES);
 	                  }
 	              }
 	          };
 
-	          mHandler.sendEmptyMessage(UPDATE_VISIBLE_RACKS);
+	          /*
+	           * Fire off first message to start scheduled updates.
+	           * 
+	           * The delay is a hack to avoid a bug where we get "wrong" coordinates,
+	           * which only yields an update of a few racks in the center. Maybe map
+	           * has not been properly set up yet?
+	           */
+	          mHandler.sendEmptyMessageDelayed(UPDATE_VISIBLE_RACKS, 1000);
+
 	          Looper.loop();
 	      }
 
@@ -1003,12 +1004,69 @@ public class Map extends MapActivity {
 	}
 	
 
+	/**
+	 * Stores various Views to avoid instantiating them every time they are used.
+	 */
     static class ViewHolder {
-        ImageButton list;
-
         RackInfoPanel infoPanel;
         TextView name;
         TextView information;
     }
+    
+
+	/**
+	 * Keeps Rack object with information about when it was last updated. Used for determining
+	 * whether to get stack state from ClearChannel or use a Cached version.
+	 */
+    class RackState {
+    	/**
+    	 * The amount of time in ms before rack data should be considered stale.
+    	 */
+    	private static final int TIME_BEFORE_CONSIDERED_STALE = 30000;
+    	
+    	/**
+    	 * Time in unix time (ms since epoch) when rack this rack was stored.
+    	 */
+    	long lastUpdated;
+    	
+    	Rack rack;
+    	
+    	public RackState(Rack rack) {
+    		setRack(rack);
+    	}
+    	
+    	public long getLastUpdated() {
+			return lastUpdated;
+		}
+		
+    	public void setLastUpdate() {
+			this.lastUpdated = System.currentTimeMillis();
+		}
+		
+		public Rack getRack() {
+			return rack;
+		}
+		
+		public void setRack(Rack rack) {
+			this.rack = rack;
+			setLastUpdate();
+		}
+		
+		/**
+		 * Checks whether the threshold for considering rack data expired.
+		 * 
+		 * @return boolean
+		 */
+		public boolean isStale() {
+			return (System.currentTimeMillis() - getLastUpdated()) > TIME_BEFORE_CONSIDERED_STALE;
+		}
+    }
 	
+	public RackState getRackState(int rackId) {
+		return rackStateCache.get(rackId);
+	}
+
+	public void setRackState(Rack rack) {
+		rackStateCache.put(rack.getId(), new RackState(rack));
+	}
 }

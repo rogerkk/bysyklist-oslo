@@ -19,8 +19,8 @@
 package no.rkkc.bysykkel.views;
 
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
-import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
+import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.model.Rack;
 import android.content.Context;
 import android.os.Bundle;
@@ -32,19 +32,24 @@ import android.widget.TextView;
 
 import com.google.android.TransparentPanel;
 
+/**
+ * Panel for displaying rack name and availability information
+ */
 public class RackInfoPanel extends TransparentPanel {
-	int rackId;
+	private int rackId;
 	private static final String TAG = "Bysyklist-RackInfoPanel";
+	private Map map;
 
 	public RackInfoPanel(Context context) {
 		super(context);
+		map = (Map)context;
 	}
 	
     public RackInfoPanel(Context context, AttributeSet attrs) {
         super(context, attrs);
+        map = (Map)context;
     }	
 
-	// Handler for updating status information in panel
 	Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
@@ -70,6 +75,8 @@ public class RackInfoPanel extends TransparentPanel {
 				
 				try {
 					Rack rack = ocbAdapter.getRack(rackId);
+					map.setRackState(rack);
+					
 					if (rack.isOnline()) {
 						bundle.putBoolean("online", true);
 						bundle.putInt("bikes", rack.getNumberOfReadyBikes());
