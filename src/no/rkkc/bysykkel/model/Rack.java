@@ -79,6 +79,11 @@ public class Rack {
         return emptyLocks;
     }
     
+    public boolean hasEmptySlots() {
+    	return getNumberOfEmptySlots() >= 1;
+    }
+
+    
     public void setNumberOfEmptySlots(int emptySlots) {
         this.emptyLocks = emptySlots;
     }
@@ -89,6 +94,10 @@ public class Rack {
 
     public int getNumberOfReadyBikes() {
         return readyBikes;
+    }
+    
+    public boolean hasReadyBikes() {
+    	return getNumberOfReadyBikes() >= 1;
     }
     
     public void setNumberOfReadyBikes(int readyBikes) {
