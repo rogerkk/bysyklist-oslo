@@ -107,8 +107,10 @@ public class Map extends MapActivity {
 		if (savedInstanceState != null) {
 			// Config change (rotation?)
 			restoreZoomAndCenter(savedInstanceState);
-		} else if (getIntent().getBooleanExtra("FindNearest", false)) {
-			// Opened by shortcut for finding nearest lock/bike
+		} else if (getIntent().getAction().equals("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE")
+			|| getIntent().getAction().equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")
+			|| getIntent().getAction().equals("no.rkkc.bysykkel.SHOW_RACK")) {
+			// TODO: Should really find a better way to single out these intents
 			processIntent(getIntent());
 		} else {
 			// Default and most common action.
@@ -281,7 +283,6 @@ public class Map extends MapActivity {
 	@Override
 	public boolean dispatchTouchEvent(MotionEvent event) {
 		catchLongPress(event);
-//		handlePanning(event);
 		
 		if (event.getAction() == MotionEvent.ACTION_DOWN) {
 			hideRackInfo();
@@ -290,20 +291,6 @@ public class Map extends MapActivity {
 		return super.dispatchTouchEvent(event);
 	}
 	
-//	private void handlePanning(MotionEvent event) {
-//		if (event.getAction() == MotionEvent.ACTION_MOVE &&	event.getHistorySize() > 1) {
-//		    // Get difference in position since previous move event
-//		    float diffX = event.getX() - event.getHistoricalX(event.getHistorySize() - 1);
-//		    float diffY = event.getY() - event.getHistoricalY(event.getHistorySize() - 1);
-//
-//		    if (Math.abs(diffX) > 0.5f || Math.abs(diffY) > 0.5f) {
-//		    	// Position has changed substantially, this is probably a drag action.
-//		    	rackStateThread.mHandler.removeMessages(RackStateThread.UPDATE_VISIBLE_RACKS);
-//		    	rackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
-//		    }
-//		}
-//	}
-
 	private boolean isFirstRun() {
 		SharedPreferences settings = getPreferences(MODE_PRIVATE);
 		if (settings.getLong("racksUpdatedTime", -1) == -1) {
@@ -347,6 +334,11 @@ public class Map extends MapActivity {
     		new ShowNearestRackTask(FindRackCriteria.ReadyBike).execute();
     	} else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")) {
     		new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
+    	} else if (action.equals("no.rkkc.bysykkel.SHOW_RACK")) {
+    		Rack rack = rackDb.getRack(intent.getIntExtra("rackId", 0));
+    		mapController.setCenter(rack.getLocation());
+    		rackOverlay.highlightRack(intent.getIntExtra("rackId", 0));
+    		showRackInfo(rack);
 		}
 	}
 	
@@ -383,7 +375,7 @@ public class Map extends MapActivity {
 	 * @return {@link RacksOverlay}
 	 */
 	private RacksOverlay initializeRackOverlay(ArrayList<Rack> racks) {
-		Drawable default_marker = getResources().getDrawable(R.drawable.bubble_red);
+		Drawable default_marker = getResources().getDrawable(R.drawable.bubble_red_questionmark);
 		default_marker.setBounds(0, 0, default_marker.getIntrinsicWidth(), default_marker
 				.getIntrinsicHeight());
 		
@@ -651,7 +643,7 @@ public class Map extends MapActivity {
 		/**
 		 * Marker indicating that we do not know status of rack.
 		 */
-		private Drawable unknown_marker;
+		private Drawable data_missing_marker;
 		
 		/**
 		 * Marker indicating that user is viewing the info popup of a rack.
@@ -661,7 +653,7 @@ public class Map extends MapActivity {
 		public RacksOverlay(Drawable default_marker, ArrayList<Rack> racks) {
 			super(default_marker);
 			this.racks = racks;
-			this.unknown_marker = default_marker;
+			boundCenterBottom(default_marker);
 			
 			setupMarkers();
 			populate();
@@ -679,11 +671,15 @@ public class Map extends MapActivity {
 			info_marker = getResources().getDrawable(R.drawable.bubble_info);
 			info_marker.setBounds(0, 0, info_marker.getIntrinsicWidth(), info_marker
 					.getIntrinsicHeight());
+	
+			data_missing_marker = getResources().getDrawable(R.drawable.bubble_red);
+			data_missing_marker.setBounds(0, 0, data_missing_marker.getIntrinsicWidth(), data_missing_marker
+					.getIntrinsicHeight());
 			
 			boundCenterBottom(partial_marker);
 			boundCenterBottom(ok_marker);
 			boundCenterBottom(info_marker);
-			boundCenterBottom(unknown_marker);
+			boundCenterBottom(data_missing_marker);
 		}
 		
 		public void highlightRack(int rackId) {
@@ -696,8 +692,8 @@ public class Map extends MapActivity {
 		 * 
 		 * @param rackId
 		 */
-		public void setUnknownMarker(int rackId) {
-			setMarker(rackId, unknown_marker);
+		public void setDataMissingMarker(int rackId) {
+			setMarker(rackId, data_missing_marker);
 		}
 		
 		/**
@@ -734,7 +730,7 @@ public class Map extends MapActivity {
         	} else if (rack.isOnline() && rack.hasBikeAndSlotInfo() && (rack.hasReadyBikes() || rack.hasEmptySlots())) {
         		setPartialMarker(rack.getId());
         	} else {
-        		setUnknownMarker(rack.getId());
+        		setDataMissingMarker(rack.getId());
         	}
 		}
 
@@ -847,6 +843,7 @@ public class Map extends MapActivity {
 				Toaster.toast(Map.this, R.string.error_search_failed, Toast.LENGTH_SHORT);
 			} else {
 				highlightRack(nearestRack.getId(), 3000);
+				showRackInfo(nearestRack);
 				animateToRack(nearestRack);
 				
 				// Show stats for the closest rack
@@ -998,7 +995,9 @@ public class Map extends MapActivity {
         }
 
         public void disable() {
-            mHandler.removeMessages(RackStateThread.UPDATE_VISIBLE_RACKS);
+        	if (mHandler != null) {
+        		mHandler.removeMessages(RackStateThread.UPDATE_VISIBLE_RACKS);
+        	}
             isDisabled = true;
         }
 	}

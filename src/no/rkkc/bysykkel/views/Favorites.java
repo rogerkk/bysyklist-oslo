@@ -12,6 +12,7 @@ import no.rkkc.bysykkel.model.Rack;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ListActivity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -27,6 +28,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 
 public class Favorites extends ListActivity {
@@ -91,6 +93,17 @@ public class Favorites extends ListActivity {
 		
 		return super.onCreateDialog(id);
 	}
+    
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+    	super.onListItemClick(l, v, position, id);
+    	
+    	Rack rack = listItems.get(position);
+    	
+    	Intent intent = new Intent("no.rkkc.bysykkel.SHOW_RACK");
+    	intent.putExtra("rackId", rack.getId());
+    	startActivity(intent);
+    }
     
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {

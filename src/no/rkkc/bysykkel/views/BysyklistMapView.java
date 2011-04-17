@@ -38,7 +38,7 @@ public interface OnPanChangeListener {
 }
 
 // Set this variable to your preferred timeout
-private long eventsTimeout = 500L;
+private long eventsTimeout = 200L;
 private GeoPoint lastMapCenter;
 private int lastZoom;
 private Timer zoomEventDelayTimer = new Timer();
