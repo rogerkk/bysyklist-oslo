@@ -26,7 +26,6 @@ import java.util.NoSuchElementException;
 
 import no.rkkc.bysykkel.Constants;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
-import no.rkkc.bysykkel.LongpressHelper;
 import no.rkkc.bysykkel.MenuHelper;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.Toaster;
@@ -75,9 +74,7 @@ public class Map extends MapActivity {
 	private RacksOverlay rackOverlay; 
 	private RackStateThread rackStateThread = new RackStateThread();
 	private HashMap<Integer, RackState> rackStateCache = new HashMap<Integer, RackState>();
-	
 	private GeoPoint contextMenuGeoPoint = null;
-	private LongpressHelper contextMenuHelper = new LongpressHelper();
 	
 	GeoPoint savedLocation;
 	int savedZoomLevel;
@@ -118,6 +115,21 @@ public class Map extends MapActivity {
 	        animateToMyLocationOnFirstFix();
 		}
 		
+		setupListeners();
+    }
+
+	private void setupListeners() {
+		mapView.setOnLongpressListener(new BysyklistMapView.OnLongpressListener() {
+			public void onLongpress(final MapView view, GeoPoint longpressLocation) {
+				contextMenuGeoPoint = longpressLocation;
+				runOnUiThread(new Runnable() {
+					public void run() {
+						view.showContextMenu();
+					}
+				});
+			}
+		});
+		
 	    mapView.setOnZoomChangeListener(new BysyklistMapView.OnZoomChangeListener() {
 			public void onZoomChange(MapView view, int newZoom, int oldZoom) {
 				rackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
@@ -129,8 +141,7 @@ public class Map extends MapActivity {
 	        	rackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);	 
 	        }
 	    });
-
-    }
+	}
 
 	public void animateToMyLocationOnFirstFix() {
 		myLocation.runOnFirstFix(new Runnable() {
@@ -275,15 +286,8 @@ public class Map extends MapActivity {
 		return false;
 	}
 	
-	/**
-	 * Override dispatchTouchEvent to catch a longpress anywhere on the map and display a 
-	 * context menu.
-	 * 
-	 */
 	@Override
 	public boolean dispatchTouchEvent(MotionEvent event) {
-		catchLongPress(event);
-		
 		if (event.getAction() == MotionEvent.ACTION_DOWN) {
 			hideRackInfo();
 		}
@@ -383,34 +387,6 @@ public class Map extends MapActivity {
 		return rackOverlay;
 	}
 
-	/**
-	 * Handles calling of the context menu, if longpress is detected on map.
-	 * 
-	 * Takes a MotionEvent as argument, and if method is not called again with an event that
-	 * indicates that this is anything but a longpress, a message is sent to display the context
-	 * menu. Any event except MotionEvent.ACTION_DOWN will reset the longpress detection.
-	 * 
-	 * @param event	as passed into dispatchTouchEvent.
-	 */
-	private void catchLongPress(MotionEvent event) {
-		if (event.getAction() == MotionEvent.ACTION_DOWN) { // New touch has been detected
-			final MotionEvent touchEvent = event;
-			new Thread(new LongpressDetector(touchEvent)).start();
-		} else {
-			contextMenuHelper.handleMotionEvent(event);
-		}
-	}
-
-	/**
-	 * Stores event location for usage by the context menu
-	 * 
-	 * @param event
-	 */
-	private void storeEventLocationForContextMenu(MotionEvent event) {
-		contextMenuGeoPoint = mapView.getProjection().fromPixels((int)event.getX(), 
-				(int)event.getY());
-	}
-	
 	/**
 	 * @param closestRackWithSlotOrBike
 	 */
@@ -580,29 +556,6 @@ public class Map extends MapActivity {
 	
 	public void highlightRack(Integer rackId) {
 		highlightRack(rackId, null);
-	}
-	
-	private class LongpressDetector implements Runnable {
-		private final MotionEvent touchEvent;
-
-		private LongpressDetector(MotionEvent touchEvent) {
-			this.touchEvent = touchEvent;
-		}
-
-		public void run() {
-			Looper.prepare();
-			if (contextMenuHelper.isLongPressDetected()) {
-				// Store event location for usage by context menu actions
-				storeEventLocationForContextMenu(touchEvent);
-				
-				// Show the context menu
-				runOnUiThread(new Runnable() {
-					public void run() {
-						mapView.showContextMenu();								
-					}
-				});
-			}
-		}
 	}
 
 	private class LocationAndDistance implements Comparable<LocationAndDistance> {
