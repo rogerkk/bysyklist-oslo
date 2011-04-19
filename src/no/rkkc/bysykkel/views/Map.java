@@ -103,9 +103,9 @@ public class Map extends MapActivity {
 
 		if (getLastNonConfigurationInstance() != null) {
 			restoreStateAfterOrientationChange();
-		} else if (getIntent().getAction().equals("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE")
-			|| getIntent().getAction().equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")
-			|| getIntent().getAction().equals("no.rkkc.bysykkel.SHOW_RACK")) {
+		} else if ("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE".equals(getIntent().getAction())
+			|| "no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT".equals(getIntent().getAction())
+			|| "no.rkkc.bysykkel.SHOW_RACK".equals(getIntent().getAction())) {
 			// TODO: Should really find a better way to single out these intents
 			processIntent(getIntent());
 		} else {
