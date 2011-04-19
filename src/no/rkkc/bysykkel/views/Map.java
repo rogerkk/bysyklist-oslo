@@ -165,6 +165,12 @@ public class Map extends MapActivity {
 		GeoPoint point = new GeoPoint((int)savedInstanceState.getFloat("Latitude"), (int)savedInstanceState.getFloat("Longitude"));
 		mapController.setZoom(savedInstanceState.getInt("ZoomLevel"));
 		mapController.setCenter(point);
+		
+		int highlighedRack = savedInstanceState.getInt("HighlightedRack");
+		if (highlighedRack != 0) {
+			highlightRack(highlighedRack);
+			showRackInfo(highlighedRack);
+		}
 	}
 
 	@Override
@@ -211,6 +217,10 @@ public class Map extends MapActivity {
     	savedInstanceState.putInt("ZoomLevel",  mapView.getZoomLevel());
     	savedInstanceState.putFloat("Latitude", mapView.getMapCenter().getLatitudeE6());
     	savedInstanceState.putFloat("Longitude", mapView.getMapCenter().getLongitudeE6());
+    	
+    	if (rackOverlay.highlightedRackId != null) {
+    		savedInstanceState.putInt("HighlightedRack", rackOverlay.highlightedRackId);
+    	}
     	
     	super.onSaveInstanceState(savedInstanceState);
     }
@@ -516,6 +526,11 @@ public class Map extends MapActivity {
 		
 		rack.incrementViewCount();
 		rackDb.save(rack);
+	}
+	
+	public void showRackInfo(int rackId) {
+		Rack rack = rackDb.getRack(rackId);
+		showRackInfo(rack);
 	}
 	
 	public void hideRackInfo() {
