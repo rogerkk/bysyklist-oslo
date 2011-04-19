@@ -101,9 +101,8 @@ public class Map extends MapActivity {
 
         initializeMap();
 
-		if (savedInstanceState != null) {
-			// Config change (rotation?)
-			restoreZoomAndCenter(savedInstanceState);
+		if (getLastNonConfigurationInstance() != null) {
+			restoreStateAfterOrientationChange();
 		} else if (getIntent().getAction().equals("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE")
 			|| getIntent().getAction().equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")
 			|| getIntent().getAction().equals("no.rkkc.bysykkel.SHOW_RACK")) {
@@ -117,6 +116,26 @@ public class Map extends MapActivity {
 		
 		setupListeners();
     }
+
+	private void restoreStateAfterOrientationChange() {
+		MapContext mapContext = (MapContext)getLastNonConfigurationInstance();
+		
+		mapController.setZoom(mapContext.zoomLevel);
+		mapController.setCenter(mapContext.mapCenter);
+		if (mapContext.highlightedRack != null) {
+			highlightRack(mapContext.highlightedRack);
+			showRackInfo(mapContext.highlightedRack);
+		}
+		rackStateCache = mapContext.rackStateCache;
+		
+		for (RackState rackState: rackStateCache.values()) {
+			Rack rack = rackState.getRack();
+			
+			if ((Integer)rack.getId() != rackOverlay.highlightedRackId) {
+				rackOverlay.setMarker(rackState.getRack());
+			}
+		}
+	}
 
 	private void setupListeners() {
 		mapView.setOnLongpressListener(new BysyklistMapView.OnLongpressListener() {
@@ -161,22 +180,9 @@ public class Map extends MapActivity {
 		}
 	}
 
-	private void restoreZoomAndCenter(Bundle savedInstanceState) {
-		GeoPoint point = new GeoPoint((int)savedInstanceState.getFloat("Latitude"), (int)savedInstanceState.getFloat("Longitude"));
-		mapController.setZoom(savedInstanceState.getInt("ZoomLevel"));
-		mapController.setCenter(point);
-		
-		int highlighedRack = savedInstanceState.getInt("HighlightedRack");
-		if (highlighedRack != 0) {
-			highlightRack(highlighedRack);
-			showRackInfo(highlighedRack);
-		}
-	}
-
 	@Override
     protected void onRestart() {
     	super.onRestart();
-
     }
 	
 	@Override
@@ -213,16 +219,8 @@ public class Map extends MapActivity {
     }
     
     @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-    	savedInstanceState.putInt("ZoomLevel",  mapView.getZoomLevel());
-    	savedInstanceState.putFloat("Latitude", mapView.getMapCenter().getLatitudeE6());
-    	savedInstanceState.putFloat("Longitude", mapView.getMapCenter().getLongitudeE6());
-    	
-    	if (rackOverlay.highlightedRackId != null) {
-    		savedInstanceState.putInt("HighlightedRack", rackOverlay.highlightedRackId);
-    	}
-    	
-    	super.onSaveInstanceState(savedInstanceState);
+    public Object onRetainNonConfigurationInstance() {
+    	return new MapContext();
     }
     
     @Override
@@ -1035,5 +1033,22 @@ public class Map extends MapActivity {
 
 	public void setRackState(Rack rack) {
 		rackStateCache.put(rack.getId(), new RackState(rack));
+	}
+	
+	/**
+	 * Class for keeping all the context we need to rebuild our map after orientation change
+	 */
+	private class MapContext {
+		int zoomLevel;
+		GeoPoint mapCenter;
+		Integer highlightedRack;
+		HashMap<Integer, RackState> rackStateCache;
+		
+		public MapContext() {
+			this.zoomLevel = mapView.getZoomLevel();
+			this.mapCenter = mapView.getMapCenter();
+			this.highlightedRack = rackOverlay.highlightedRackId;
+			this.rackStateCache = Map.this.rackStateCache;
+		}
 	}
 }
