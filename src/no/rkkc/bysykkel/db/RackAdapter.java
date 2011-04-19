@@ -53,7 +53,7 @@ public class RackAdapter extends DatabaseAdapter {
         Rack rack;
         String[] columns={DESCRIPTION, LATITUDE, LONGITUDE, VIEW_COUNTER, STARRED};
         
-        Cursor cursor = getWritableDatabase().query(TABLE, columns, ID + " = " + Integer.toString(id), null, null, null, null);
+        Cursor cursor = getReadableDatabase().query(TABLE, columns, ID + " = " + Integer.toString(id), null, null, null, null);
         
         if (cursor.getCount() == 0) {
         	cursor.close();
@@ -66,6 +66,7 @@ public class RackAdapter extends DatabaseAdapter {
         Integer longitude = cursor.getInt(cursor.getColumnIndex(LONGITUDE));
         Integer viewCount = cursor.getInt(cursor.getColumnIndex(VIEW_COUNTER));
         Boolean isStarred = (cursor.getInt(cursor.getColumnIndex(STARRED)) == 1) ? true : false;
+        cursor.close();
         
         rack = new Rack(id, description, latitude, longitude, viewCount, isStarred);
         
@@ -83,7 +84,6 @@ public class RackAdapter extends DatabaseAdapter {
             }
         }
 
-        cursor.close();
 
         return rack;
     }
@@ -137,9 +137,6 @@ public class RackAdapter extends DatabaseAdapter {
             cursor.moveToNext();
             rackIds[i] = cursor.getInt(cursor.getColumnIndex(ID));
         }
-//        while (cursor.moveToNext()) {
-//            rackIds.add(cursor.getInt(cursor.getColumnIndex(ID)));
-//        }
         cursor.close();
         
         return rackIds;
