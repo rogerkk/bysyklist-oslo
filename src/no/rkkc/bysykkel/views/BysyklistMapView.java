@@ -130,6 +130,10 @@ private void handleLongpress(final MotionEvent event) {
 	if (event.getAction() == MotionEvent.ACTION_UP) {
 		longpressTimer.cancel();
 	}
+	
+	if (event.getPointerCount() > 1) {
+		longpressTimer.cancel();
+	}
 }
 
 @Override
