@@ -602,9 +602,14 @@ public class Map extends MapActivity {
 		private Drawable ok_marker;
 		
 		/**
-		 * Marker indicating that the rack has either bikes or locks
+		 * Marker indicating that the rack has free bikes, but no locks
 		 */
-		private Drawable partial_marker;
+		private Drawable partial_marker_bikes;
+		
+		/**
+		 * Marker indicating that the rack has ready locks, but no bikes
+		 */
+		private Drawable partial_marker_locks;
 		
 		/**
 		 * Marker indicating that we do not know status of rack.
@@ -626,9 +631,13 @@ public class Map extends MapActivity {
 		}
 		
 		private void setupMarkers() {
-			partial_marker = getResources().getDrawable(R.drawable.bubble_yellow);
-			partial_marker.setBounds(0, 0, partial_marker.getIntrinsicWidth(), partial_marker
-					.getIntrinsicHeight());
+			partial_marker_bikes = getResources().getDrawable(R.drawable.bubble_yellow_bicycle);
+			partial_marker_bikes.setBounds(0, 0, partial_marker_bikes.getIntrinsicWidth(), 
+					partial_marker_bikes.getIntrinsicHeight());
+			
+			partial_marker_locks = getResources().getDrawable(R.drawable.bubble_yellow_parking);
+			partial_marker_locks.setBounds(0, 0, partial_marker_locks.getIntrinsicWidth(), 
+					partial_marker_locks.getIntrinsicHeight());
 			
 			ok_marker = getResources().getDrawable(R.drawable.bubble_green);
 			ok_marker.setBounds(0, 0, ok_marker.getIntrinsicWidth(), ok_marker
@@ -642,7 +651,8 @@ public class Map extends MapActivity {
 			data_missing_marker.setBounds(0, 0, data_missing_marker.getIntrinsicWidth(), data_missing_marker
 					.getIntrinsicHeight());
 			
-			boundCenterBottom(partial_marker);
+			boundCenterBottom(partial_marker_bikes);
+			boundCenterBottom(partial_marker_locks);
 			boundCenterBottom(ok_marker);
 			boundCenterBottom(info_marker);
 			boundCenterBottom(data_missing_marker);
@@ -663,12 +673,21 @@ public class Map extends MapActivity {
 		}
 		
 		/**
-		 * Display the marker indicating that there are either free bikes or locks, but not both.
+		 * Display the marker indicating that there ready bikes
 		 * 
 		 * @param rackId
 		 */
-		public void setPartialMarker(int rackId) {
-			setMarker(rackId, partial_marker);
+		public void setReadyBikesMarker(int rackId) {
+			setMarker(rackId, partial_marker_bikes);
+		}
+		
+		/**
+		 * Display the marker indicating that there are free locks.
+		 * 
+		 * @param rackId
+		 */
+		public void setEmptyLocksMarker(int rackId) {
+			setMarker(rackId, partial_marker_locks);
 		}
 		
 		/**
@@ -693,8 +712,10 @@ public class Map extends MapActivity {
 		public void setMarker(Rack rack) {
         	if (rack.isOnline() && rack.hasBikeAndSlotInfo() && rack.hasReadyBikes() && rack.hasEmptySlots()) {
         		setOkMarker(rack.getId());
-        	} else if (rack.isOnline() && rack.hasBikeAndSlotInfo() && (rack.hasReadyBikes() || rack.hasEmptySlots())) {
-        		setPartialMarker(rack.getId());
+        	} else if (rack.isOnline() && rack.hasBikeAndSlotInfo() && rack.hasReadyBikes()) {
+        		setReadyBikesMarker(rack.getId());
+        	} else if (rack.isOnline() && rack.hasBikeAndSlotInfo() && rack.hasEmptySlots()) {
+        		setEmptyLocksMarker(rack.getId());
         	} else {
         		setDataMissingMarker(rack.getId());
         	}
