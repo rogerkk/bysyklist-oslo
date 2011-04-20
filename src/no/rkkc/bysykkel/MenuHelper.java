@@ -5,19 +5,20 @@ import no.rkkc.bysykkel.tasks.RackSyncTask;
 import no.rkkc.bysykkel.views.Favorites;
 import no.rkkc.bysykkel.views.Map;
 import no.rkkc.bysykkel.views.Preferences;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.view.MenuItem;
 
 public class MenuHelper {
-    Activity activity;
+    private Activity mActivity;
     
     public MenuHelper(Activity activity) {
-        this.activity = activity;
+        this.mActivity = activity;
     }
     
     public boolean mapOptionsItemSelected(MenuItem item) {
-        Map mapActivity = (Map)activity;
+        Map mapActivity = (Map)mActivity;
         
         switch (item.getItemId()) { 
             case R.id.menuitem_my_location:
@@ -41,7 +42,7 @@ public class MenuHelper {
     }
     
     public boolean favoriteOptionsItemSelected(MenuItem item) {
-        Favorites favoritesActivity = (Favorites)activity;
+        Favorites favoritesActivity = (Favorites)mActivity;
         
         switch (item.getItemId()) { 
             case R.id.menuitem_map:
@@ -62,14 +63,14 @@ public class MenuHelper {
     private boolean genericOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menuitem_preferences:
-                Intent intent = new Intent(activity, Preferences.class);
-                activity.startActivity(intent);
+                Intent intent = new Intent(mActivity, Preferences.class);
+                mActivity.startActivity(intent);
                 return true;
             case R.id.menuitem_rack_sync:
-                new RackSyncTask(activity).execute((Void[])null);
+                new RackSyncTask(mActivity).execute((Void[])null);
                 return true;
             case R.id.menuitem_about:
-                activity.showDialog(Constants.DIALOG_ABOUT);
+                mActivity.showDialog(Constants.DIALOG_ABOUT);
                 return true;
         }
         

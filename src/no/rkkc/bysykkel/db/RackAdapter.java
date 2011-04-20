@@ -1,15 +1,16 @@
 package no.rkkc.bysykkel.db;
 
-import java.util.ArrayList;
+import com.google.android.maps.GeoPoint;
 
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import no.rkkc.bysykkel.model.Rack;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 
-import com.google.android.maps.GeoPoint;
+import java.util.ArrayList;
 
 public class RackAdapter extends DatabaseAdapter {
 

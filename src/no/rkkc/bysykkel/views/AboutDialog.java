@@ -1,6 +1,7 @@
 package no.rkkc.bysykkel.views;
 
 import no.rkkc.bysykkel.R;
+
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;

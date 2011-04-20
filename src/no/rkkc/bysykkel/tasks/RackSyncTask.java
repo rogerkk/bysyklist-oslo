@@ -1,13 +1,12 @@
 package no.rkkc.bysykkel.tasks;
 
-import java.util.ArrayList;
-
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
-import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
+import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import no.rkkc.bysykkel.views.Map;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -16,29 +15,30 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import java.util.ArrayList;
+
 /**
  * Task responsible for inserting/updating all racks according to information retrieved
  * from the Clear Channel servers. 
- *
  */
 public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
-    private Activity activity;
-    private RackAdapter rackDb;
-    private ProgressDialog syncDialog;
-    private ArrayList<Integer> failedRackIds = new ArrayList<Integer>();
+    private Activity mActivity;
+    private RackAdapter mRackAdapter;
+    private ProgressDialog mSyncDialog;
+    private ArrayList<Integer> mFailedRackIds = new ArrayList<Integer>();
     
     private static final String TAG = "Bysyklist-RackSync";
     
     public RackSyncTask(Activity activity) {
         super();
         
-        this.activity = activity;
-        rackDb = new RackAdapter(activity);
+        this.mActivity = activity;
+        mRackAdapter = new RackAdapter(activity);
     }
     
     @Override
     protected void onProgressUpdate(Integer... progress) {
-        syncDialog.incrementProgressBy(1);
+        mSyncDialog.incrementProgressBy(1);
     }
 
     @Override
@@ -50,18 +50,18 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
     @Override
     protected void onPostExecute(Boolean result) {
         super.onPostExecute(result);
-        if (activity instanceof Map) {
-            ((Map)activity).initializeMap();
-            ((Map)activity).animateToMyLocationOnFirstFix();
+        if (mActivity instanceof Map) {
+            ((Map)mActivity).initializeMap();
+            ((Map)mActivity).animateToMyLocationOnFirstFix();
         }
-        syncDialog.dismiss();
+        mSyncDialog.dismiss();
         if (!result) {
-               AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+               AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);
             builder.setMessage(R.string.syncdialog_error)
                    .setCancelable(false)
                    .setPositiveButton(R.string.syncdialog_retry, new DialogInterface.OnClickListener() {
                        public void onClick(DialogInterface dialog, int id) {
-                           new RackSyncTask(activity).execute((Void [])null);
+                           new RackSyncTask(mActivity).execute((Void [])null);
                        }
                    })
                    .setNeutralButton(R.string.syncdialog_later, new DialogInterface.OnClickListener() {
@@ -77,11 +77,11 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
     @Override
     protected Boolean doInBackground(Void... arg0) {
         OsloCityBikeAdapter osloCityBikeAdapter = new OsloCityBikeAdapter();
-        ArrayList<Integer> localRackIds = rackDb.getRackIds();
+        ArrayList<Integer> localRackIds = mRackAdapter.getRackIds();
 
         try {
             final ArrayList<Integer> remoteRackIds = osloCityBikeAdapter.getRacks();
-            syncDialog.setMax(remoteRackIds.size()+2);
+            mSyncDialog.setMax(remoteRackIds.size()+2);
             publishProgress();
             
             // Delete racks in DB that are not returned from server
@@ -89,7 +89,7 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
                 for (Integer rackId : localRackIds) {
                     if (!remoteRackIds.contains(rackId)) {
                         Log.v(TAG, "Deleting rack with ID ".concat(Integer.toString(rackId)).concat(", as it was not returned by server."));
-                        rackDb.deleteRack(rackId);
+                        mRackAdapter.deleteRack(rackId);
                     }
                 }
                 publishProgress();
@@ -102,19 +102,19 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
                 try {
                     remoteRack = osloCityBikeAdapter.getRack(rackId);
                 } catch (OsloCityBikeException e) {
-                    failedRackIds.add(rackId);
+                    mFailedRackIds.add(rackId);
                     continue;
                 }
-                if (rackDb.hasRack(rackId)) {
+                if (mRackAdapter.hasRack(rackId)) {
                     // Update
-                    localRack = rackDb.getRack(rackId);
+                    localRack = mRackAdapter.getRack(rackId);
                     localRack.setDescription(remoteRack.getDescription());
                     localRack.setLocation(remoteRack.getLocation());
                     
-                    rackDb.save(localRack);
+                    mRackAdapter.save(localRack);
                 } else {
                     // Insert
-                    rackDb.save(remoteRack);
+                    mRackAdapter.save(remoteRack);
                 }
                 publishProgress();
             }
@@ -122,7 +122,7 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
             return false;
         }
         
-        if (failedRackIds.size() > 0) {
+        if (mFailedRackIds.size() > 0) {
             // TODO: Add some sensible logging here.
             Log.v(TAG, "Some racks had errors");
             return false;
@@ -135,11 +135,11 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
      * Sets up the ProgressDialog shown when this task is running.
      */
     private void setupProgressDialog() {
-        syncDialog = new ProgressDialog(activity);
-        syncDialog.setMessage(activity.getString(R.string.syncdialog_message));
-        syncDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        syncDialog.setCancelable(false);
-        syncDialog.show();
+        mSyncDialog = new ProgressDialog(mActivity);
+        mSyncDialog.setMessage(mActivity.getString(R.string.syncdialog_message));
+        mSyncDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        mSyncDialog.setCancelable(false);
+        mSyncDialog.show();
     }
     
     /**
@@ -147,7 +147,7 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
      * updated
      */
     private void saveRackUpdatePreference() {
-        SharedPreferences settings = activity.getPreferences(Activity.MODE_PRIVATE);
+        SharedPreferences settings = mActivity.getPreferences(Activity.MODE_PRIVATE);
         settings.edit().putLong("racksUpdatedTime", System.currentTimeMillis()).commit();
     }
 }

@@ -18,21 +18,6 @@
 
 package no.rkkc.bysykkel;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.FactoryConfigurationError;
-import javax.xml.parsers.ParserConfigurationException;
-
 import no.rkkc.bysykkel.model.Rack;
 
 import org.apache.http.HttpResponse;
@@ -48,18 +33,33 @@ import org.xml.sax.SAXException;
 
 import android.util.Log;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.FactoryConfigurationError;
+import javax.xml.parsers.ParserConfigurationException;
+
 public class OsloCityBikeAdapter {
-    HttpClient httpClient;
-    HttpGet httpGet;
+    private HttpClient mHttpClient;
+    private HttpGet mHttpGet;
     
     private static final String TAG = "Bysyklist-OsloCityBikeAdapter";
     
     public OsloCityBikeAdapter() {
-        httpGet = new HttpGet();
+        mHttpGet = new HttpGet();
         
-        httpClient = new DefaultHttpClient();
-        httpClient.getParams().setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT, 10000);
-        httpClient.getParams().setIntParameter(HttpConnectionParams.SO_TIMEOUT, 10000);
+        mHttpClient = new DefaultHttpClient();
+        mHttpClient.getParams().setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT, 10000);
+        mHttpClient.getParams().setIntParameter(HttpConnectionParams.SO_TIMEOUT, 10000);
     }
     
     /**
@@ -235,10 +235,10 @@ public class OsloCityBikeAdapter {
      */
     private String makeWebServiceCall(String method) throws IOException, URISyntaxException, OsloCityBikeCommunicationException {
         
-        httpGet.setURI(new URI("http://smartbikeportal.clearchannel.no/public/mobapp/maq.asmx/".concat(method)));
+        mHttpGet.setURI(new URI("http://smartbikeportal.clearchannel.no/public/mobapp/maq.asmx/".concat(method)));
         
         HttpResponse httpResponse = null;
-        httpResponse = httpClient.execute(httpGet);
+        httpResponse = mHttpClient.execute(mHttpGet);
         
         if (httpResponse.getStatusLine().getStatusCode() != 200) {
             Log.w(TAG, "Got HTTP status " + Integer.toString(httpResponse.getStatusLine().getStatusCode()) + " from ClearChannel");

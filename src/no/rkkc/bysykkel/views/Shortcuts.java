@@ -1,17 +1,18 @@
 package no.rkkc.bysykkel.views;
 
 import no.rkkc.bysykkel.R;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.DialogInterface.OnCancelListener;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
 
 public class Shortcuts extends Activity {
 
-    AlertDialog dialog;
+    private AlertDialog fDialog;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,8 +99,8 @@ public class Shortcuts extends Activity {
             }
         });
         
-        dialog = builder.create();
-        dialog.setOnCancelListener(new OnCancelListener() {
+        fDialog = builder.create();
+        fDialog.setOnCancelListener(new OnCancelListener() {
 
             public void onCancel(DialogInterface dialog) {
                 finish();
@@ -111,6 +112,6 @@ public class Shortcuts extends Activity {
     protected void onStart() {
         super.onStart();
         
-        dialog.show();
+        fDialog.show();
     }
 }

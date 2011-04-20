@@ -18,11 +18,13 @@
 
 package no.rkkc.bysykkel.views;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NoSuchElementException;
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.ItemizedOverlay;
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.MyLocationOverlay;
+import com.google.android.maps.OverlayItem;
 
 import no.rkkc.bysykkel.Constants;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
@@ -32,6 +34,7 @@ import no.rkkc.bysykkel.Toaster;
 import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import no.rkkc.bysykkel.tasks.RackSyncTask;
+
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -57,27 +60,22 @@ import android.view.Window;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.ItemizedOverlay;
-import com.google.android.maps.MapActivity;
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
-import com.google.android.maps.MyLocationOverlay;
-import com.google.android.maps.OverlayItem;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 public class Map extends MapActivity {
-    private BysyklistMapView mapView;
-    private MyLocationOverlay myLocation;
-    private MapController mapController;
-    private RackAdapter rackAdapter;
-    private ViewHolder viewHolder = new ViewHolder();
-    private RacksOverlay rackOverlay; 
-    private RackStateThread rackStateThread = new RackStateThread();
-    private HashMap<Integer, RackState> rackStateCache = new HashMap<Integer, RackState>();
-    private GeoPoint contextMenuGeoPoint = null;
-    
-    GeoPoint savedLocation;
-    int savedZoomLevel;
+    private BysyklistMapView mMapView;
+    private MyLocationOverlay mMyLocation;
+    private MapController mMapController;
+    private RackAdapter mRackAdapter;
+    private ViewHolder mViewHolder = new ViewHolder();
+    private RacksOverlay mRackOverlay; 
+    private RackStateThread mRackStateThread = new RackStateThread();
+    private HashMap<Integer, RackState> mRackStateCache = new HashMap<Integer, RackState>();
+    private GeoPoint mContextMenuGeoPoint = null;
     
     private static final String TAG = "Bysyklist-Map";
     
@@ -86,7 +84,7 @@ public class Map extends MapActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        rackAdapter = new RackAdapter(Map.this);
+        mRackAdapter = new RackAdapter(Map.this);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 
         setContentView(R.layout.map);
@@ -120,27 +118,27 @@ public class Map extends MapActivity {
     private void restoreStateAfterOrientationChange() {
         MapContext mapContext = (MapContext)getLastNonConfigurationInstance();
         
-        mapController.setZoom(mapContext.zoomLevel);
-        mapController.setCenter(mapContext.mapCenter);
+        mMapController.setZoom(mapContext.zoomLevel);
+        mMapController.setCenter(mapContext.mapCenter);
         if (mapContext.highlightedRack != null) {
             highlightRack(mapContext.highlightedRack);
             showRackInfo(mapContext.highlightedRack);
         }
-        rackStateCache = mapContext.rackStateCache;
+        mRackStateCache = mapContext.rackStateCache;
         
-        for (RackState rackState: rackStateCache.values()) {
+        for (RackState rackState: mRackStateCache.values()) {
             Rack rack = rackState.getRack();
             
-            if ((Integer)rack.getId() != rackOverlay.highlightedRackId) {
-                rackOverlay.setMarker(rackState.getRack());
+            if ((Integer)rack.getId() != mRackOverlay.highlightedRackId) {
+                mRackOverlay.setMarker(rackState.getRack());
             }
         }
     }
 
     private void setupListeners() {
-        mapView.setOnLongpressListener(new BysyklistMapView.OnLongpressListener() {
+        mMapView.setOnLongpressListener(new BysyklistMapView.OnLongpressListener() {
             public void onLongpress(final MapView view, GeoPoint longpressLocation) {
-                contextMenuGeoPoint = longpressLocation;
+                mContextMenuGeoPoint = longpressLocation;
                 runOnUiThread(new Runnable() {
                     public void run() {
                         view.showContextMenu();
@@ -149,32 +147,32 @@ public class Map extends MapActivity {
             }
         });
         
-        mapView.setOnZoomChangeListener(new BysyklistMapView.OnZoomChangeListener() {
+        mMapView.setOnZoomChangeListener(new BysyklistMapView.OnZoomChangeListener() {
             public void onZoomChange(MapView view, int newZoom, int oldZoom) {
-                rackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
+                mRackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
             }
         });
 
-        mapView.setOnPanChangeListener(new BysyklistMapView.OnPanChangeListener() {
+        mMapView.setOnPanChangeListener(new BysyklistMapView.OnPanChangeListener() {
             public void onPanChange(MapView view, GeoPoint newCenter, GeoPoint oldCenter) {
-                rackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);     
+                mRackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);     
             }
         });
     }
 
     public void animateToMyLocationOnFirstFix() {
-        myLocation.runOnFirstFix(new Runnable() {
+        mMyLocation.runOnFirstFix(new Runnable() {
             public void run() {
-                mapController.setZoom(16);
+                mMapController.setZoom(16);
                 animateToMyLocation();
             }
         });
     }
 
     private void animateToLastKnownLocationIfAvailable() {
-        GeoPoint recentLocation = myLocation.getMyLocation();
+        GeoPoint recentLocation = mMyLocation.getMyLocation();
         if (recentLocation != null) {
-            mapController.animateTo(recentLocation);
+            mMapController.animateTo(recentLocation);
         } else {
             showOsloOverview();
         }
@@ -190,21 +188,21 @@ public class Map extends MapActivity {
         super.onStart();
         
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        mapView.setSatellite(prefs.getString("map-mode", "MAP").equals("SATELLITE"));
+        mMapView.setSatellite(prefs.getString("map-mode", "MAP").equals("SATELLITE"));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        rackStateThread.enable();
-        myLocation.enableMyLocation();
+        mRackStateThread.enable();
+        mMyLocation.enableMyLocation();
     }
     
     @Override
     protected void onPause() {
         super.onPause();
-        myLocation.disableMyLocation();
-        rackStateThread.disable();
+        mMyLocation.disableMyLocation();
+        mRackStateThread.disable();
     }
     
     @Override
@@ -215,7 +213,7 @@ public class Map extends MapActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        rackAdapter.close();
+        mRackAdapter.close();
     }
     
     @Override
@@ -265,10 +263,10 @@ public class Map extends MapActivity {
     public boolean onContextItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case Menu.FIRST:
-                new ShowNearestRackTask(FindRackCriteria.ReadyBike, contextMenuGeoPoint).execute();
+                new ShowNearestRackTask(FindRackCriteria.ReadyBike, mContextMenuGeoPoint).execute();
                 return true;
             case Menu.FIRST+1:
-                new ShowNearestRackTask(FindRackCriteria.FreeSlot, contextMenuGeoPoint).execute();
+                new ShowNearestRackTask(FindRackCriteria.FreeSlot, mContextMenuGeoPoint).execute();
                 return true;
         }
             
@@ -314,24 +312,24 @@ public class Map extends MapActivity {
 
     private void setupMapView() {
         // Set up map view
-        mapView = (BysyklistMapView)findViewById(R.id.mapview);
-        mapView.setBuiltInZoomControls(true);
-        registerForContextMenu(mapView);
-        mapController = mapView.getController();
+        mMapView = (BysyklistMapView)findViewById(R.id.mapview);
+        mMapView.setBuiltInZoomControls(true);
+        registerForContextMenu(mMapView);
+        mMapController = mMapView.getController();
         
     }
 
     private void setupInfoPanel() {
-        viewHolder.infoPanel = (RackInfoPanel) findViewById(R.id.infoPanel);
-        viewHolder.infoPanel.setVisibility(View.GONE);
-        viewHolder.name = (TextView) viewHolder.infoPanel.findViewById(R.id.name);
-        viewHolder.information = (TextView) findViewById(R.id.information);
+        mViewHolder.infoPanel = (RackInfoPanel) findViewById(R.id.infoPanel);
+        mViewHolder.infoPanel.setVisibility(View.GONE);
+        mViewHolder.name = (TextView) mViewHolder.infoPanel.findViewById(R.id.name);
+        mViewHolder.information = (TextView) findViewById(R.id.information);
     }
 
     private void setupMyLocation() {
-        myLocation = new MyLocationOverlay(this, mapView);
-        myLocation.enableMyLocation();
-        mapView.getOverlays().add(myLocation);
+        mMyLocation = new MyLocationOverlay(this, mMapView);
+        mMyLocation.enableMyLocation();
+        mMapView.getOverlays().add(mMyLocation);
     }
     
     /**
@@ -347,9 +345,9 @@ public class Map extends MapActivity {
         } else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")) {
             new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
         } else if (action.equals("no.rkkc.bysykkel.SHOW_RACK")) {
-            Rack rack = rackAdapter.getRack(intent.getIntExtra("rackId", 0));
-            mapController.setCenter(rack.getLocation());
-            rackOverlay.highlightRack(intent.getIntExtra("rackId", 0));
+            Rack rack = mRackAdapter.getRack(intent.getIntExtra("rackId", 0));
+            mMapController.setCenter(rack.getLocation());
+            mRackOverlay.highlightRack(intent.getIntExtra("rackId", 0));
             showRackInfo(rack);
         }
     }
@@ -368,17 +366,17 @@ public class Map extends MapActivity {
      */
     private void showOsloOverview() {
         // Show standard location (Overview of Oslo) 
-        mapController.setZoom(13);
-        mapController.setCenter(new GeoPoint((int)(59.924653*1E6), (int) (10.731071*1E6)));
+        mMapController.setZoom(13);
+        mMapController.setCenter(new GeoPoint((int)(59.924653*1E6), (int) (10.731071*1E6)));
     }
 
     /**
      * Set up the map with the overlay containing the bike rack representions
      */
     public void initializeMap() {
-        rackOverlay = initializeRackOverlay(rackAdapter.getRacks());
-        mapView.getOverlays().add(rackOverlay);  
-        mapView.invalidate();
+        mRackOverlay = initializeRackOverlay(mRackAdapter.getRacks());
+        mMapView.getOverlays().add(mRackOverlay);  
+        mMapView.invalidate();
     }
 
     /**
@@ -399,7 +397,7 @@ public class Map extends MapActivity {
      * @param closestRackWithSlotOrBike
      */
     private void animateToRack(Rack closestRackWithSlotOrBike) {
-        mapController.animateTo(closestRackWithSlotOrBike.getLocation());
+        mMapController.animateTo(closestRackWithSlotOrBike.getLocation());
     }
 
     /**
@@ -413,7 +411,7 @@ public class Map extends MapActivity {
                 GeoPoint location = getMyLocation();
                 
                 if (location != null) {
-                    mapController.animateTo(location);
+                    mMapController.animateTo(location);
                 }
                 
             }
@@ -447,7 +445,7 @@ public class Map extends MapActivity {
         GeoPoint location = null;
         
         if (useLastSet) {
-            location = myLocation.getMyLocation();
+            location = mMyLocation.getMyLocation();
         }
         
         // Times in seconds
@@ -462,7 +460,7 @@ public class Map extends MapActivity {
     
             SystemClock.sleep(200);
             
-            location = myLocation.getMyLocation();
+            location = mMyLocation.getMyLocation();
             retryTimeElapsed++;
         }
         
@@ -480,7 +478,7 @@ public class Map extends MapActivity {
         }
         
         List<LocationAndDistance> sortedStationLocations = new ArrayList<LocationAndDistance>();
-        for (Rack rack : rackAdapter.getRacks()) {
+        for (Rack rack : mRackAdapter.getRacks()) {
             Log.v(Map.TAG, rack.toString());
             
             Location rackLocation = new Location("Bysyklist");
@@ -499,7 +497,7 @@ public class Map extends MapActivity {
         Rack foundRack = null;
         Rack rack = null;
         for (LocationAndDistance lad : sortedStationLocations) {
-            rack = rackAdapter.getRack(lad.getStationIndex(), true);
+            rack = mRackAdapter.getRack(lad.getStationIndex(), true);
             
             if (!rack.hasBikeAndSlotInfo()) continue; // Sometimes we get no information from the rack, so just skip it.
             
@@ -516,25 +514,25 @@ public class Map extends MapActivity {
     }
     
     public void showRackInfo(Rack rack) {
-        viewHolder.name.setText(rack.getDescription());
-        viewHolder.information.setText(R.string.rackdialog_fetching);
-        viewHolder.infoPanel.setRackId(rack.getId());
-        viewHolder.infoPanel.setVisibility(View.VISIBLE);
-        viewHolder.infoPanel.getStatusInfo();
+        mViewHolder.name.setText(rack.getDescription());
+        mViewHolder.information.setText(R.string.rackdialog_fetching);
+        mViewHolder.infoPanel.setRackId(rack.getId());
+        mViewHolder.infoPanel.setVisibility(View.VISIBLE);
+        mViewHolder.infoPanel.getStatusInfo();
         
         rack.incrementViewCount();
-        rackAdapter.save(rack);
+        mRackAdapter.save(rack);
     }
     
     public void showRackInfo(int rackId) {
-        Rack rack = rackAdapter.getRack(rackId);
+        Rack rack = mRackAdapter.getRack(rackId);
         showRackInfo(rack);
     }
     
     public void hideRackInfo() {
-        if (viewHolder.infoPanel != null) {
-            rackOverlay.resetHighlighting();
-            viewHolder.infoPanel.setVisibility(View.GONE);
+        if (mViewHolder.infoPanel != null) {
+            mRackOverlay.resetHighlighting();
+            mViewHolder.infoPanel.setVisibility(View.GONE);
         }
     }
     
@@ -543,7 +541,7 @@ public class Map extends MapActivity {
      * @return
      */
     public void highlightRack(Integer rackId, final Integer duration) {
-        rackOverlay.highlightRack(rackId);
+        mRackOverlay.highlightRack(rackId);
         
         if (duration == null) {
             return;
@@ -556,15 +554,15 @@ public class Map extends MapActivity {
                 } catch (InterruptedException e) {
                     // Don't do anything. The finally-clause will revert to previous state anyway.
                 } finally {
-                    rackOverlay.resetHighlighting();
-                    mapView.postInvalidate();
+                    mRackOverlay.resetHighlighting();
+                    mMapView.postInvalidate();
                 }
             }
         });
         
-        Rack rack = rackAdapter.getRack(rackId);
+        Rack rack = mRackAdapter.getRack(rackId);
         rack.incrementViewCount();
-        rackAdapter.save(rack);
+        mRackAdapter.save(rack);
     }
     
     public void highlightRack(Integer rackId) {
@@ -701,7 +699,7 @@ public class Map extends MapActivity {
         
         public void setMarker(int rackId, Drawable marker) {
             getItem(findOverlayIndex(rackId)).setMarker(marker);
-            mapView.postInvalidate();
+            mMapView.postInvalidate();
         }
         
         /**
@@ -815,7 +813,7 @@ public class Map extends MapActivity {
             super.onPreExecute();
             
             hideRackInfo();
-            rackOverlay.resetHighlighting();
+            mRackOverlay.resetHighlighting();
             showDialog(dialogId);
         }
         
@@ -918,10 +916,10 @@ public class Map extends MapActivity {
                        * include a little extra space around the visible area, since the marker
                        * icon may be visible if the point is just outside the screen.
                        */
-                      GeoPoint topLeft = mapView.getProjection().fromPixels(0, -30);
-                      GeoPoint bottomRight = mapView.getProjection().fromPixels(mapView.getWidth()+30, mapView.getHeight()+30);
+                      GeoPoint topLeft = mMapView.getProjection().fromPixels(0, -30);
+                      GeoPoint bottomRight = mMapView.getProjection().fromPixels(mMapView.getWidth()+30, mMapView.getHeight()+30);
                       
-                      Integer[] rackIds = rackAdapter.getRackIds(topLeft, bottomRight);
+                      Integer[] rackIds = mRackAdapter.getRackIds(topLeft, bottomRight);
 
                       for (final int rackId: rackIds) {
                           if (mHandler.hasMessages(UPDATE_VISIBLE_RACKS) || isDisabled) {
@@ -930,19 +928,19 @@ public class Map extends MapActivity {
                           }
                           
                           final Rack rack;
-                          if (rackStateCache.get(rackId) != null && !rackStateCache.get(rackId).isStale()) {
+                          if (mRackStateCache.get(rackId) != null && !mRackStateCache.get(rackId).isStale()) {
                               // Get cached rack
                               rack = getRackState(rackId).getRack();
                           } else {
-                              rack = rackAdapter.getRack(rackId, true);
+                              rack = mRackAdapter.getRack(rackId, true);
                               setRackState(rack);
                           }
                           
                           runOnUiThread(new Runnable() {
                                 public void run() {
-                                    if (rackOverlay.highlightedRackId == null ||
-                                            rack.getId() != rackOverlay.highlightedRackId) {
-                                        rackOverlay.setMarker(rack);
+                                    if (mRackOverlay.highlightedRackId == null ||
+                                            rack.getId() != mRackOverlay.highlightedRackId) {
+                                        mRackOverlay.setMarker(rack);
                                     }
                                 }
                           });
@@ -1049,11 +1047,11 @@ public class Map extends MapActivity {
     }
     
     public RackState getRackState(int rackId) {
-        return rackStateCache.get(rackId);
+        return mRackStateCache.get(rackId);
     }
 
     public void setRackState(Rack rack) {
-        rackStateCache.put(rack.getId(), new RackState(rack));
+        mRackStateCache.put(rack.getId(), new RackState(rack));
     }
     
     /**
@@ -1066,10 +1064,10 @@ public class Map extends MapActivity {
         HashMap<Integer, RackState> rackStateCache;
         
         public MapContext() {
-            this.zoomLevel = mapView.getZoomLevel();
-            this.mapCenter = mapView.getMapCenter();
-            this.highlightedRack = rackOverlay.highlightedRackId;
-            this.rackStateCache = Map.this.rackStateCache;
+            this.zoomLevel = mMapView.getZoomLevel();
+            this.mapCenter = mMapView.getMapCenter();
+            this.highlightedRack = mRackOverlay.highlightedRackId;
+            this.rackStateCache = Map.this.mRackStateCache;
         }
     }
 }

@@ -1,6 +1,7 @@
 package no.rkkc.bysykkel.views;
 
 import no.rkkc.bysykkel.R;
+
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 

@@ -20,6 +20,7 @@ package no.rkkc.bysykkel;
 
 import no.rkkc.bysykkel.views.Favorites;
 import no.rkkc.bysykkel.views.Map;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;

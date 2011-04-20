@@ -18,16 +18,15 @@
 
 package no.rkkc.bysykkel.views;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapView;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapView;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class BysyklistMapView extends MapView {
     
@@ -46,16 +45,16 @@ public interface OnPanChangeListener {
 static final float LONGPRESS_MOVEMENT_THRESHOLD = 0.5f;
 
 // Set this variable to your preferred timeout
-private long eventsTimeout = 200L;
-private GeoPoint lastMapCenter;
-private int lastZoom;
-private Timer zoomEventDelayTimer = new Timer();
-private Timer panEventDelayTimer = new Timer();
-private Timer longpressTimer = new Timer();
+private long mEventsTimeout = 200L;
+private GeoPoint mLastMapCenter;
+private int mLastZoom;
+private Timer mZoomEventDelayTimer = new Timer();
+private Timer mPanEventDelayTimer = new Timer();
+private Timer mLongpressTimer = new Timer();
 
-private BysyklistMapView.OnZoomChangeListener zoomChangeListener;
-private BysyklistMapView.OnPanChangeListener panChangeListener;
-private BysyklistMapView.OnLongpressListener longpressListener;
+private BysyklistMapView.OnZoomChangeListener mZoomChangeListener;
+private BysyklistMapView.OnPanChangeListener mPanChangeListener;
+private BysyklistMapView.OnLongpressListener mLongpressListener;
 
 public BysyklistMapView(Context context, String apiKey) {
     super(context, apiKey);
@@ -77,22 +76,22 @@ public BysyklistMapView(Context context, AttributeSet attrs, int defStyle) {
  * make sure it is run.
  */
 private void getCenterAndZoom() {
-    lastMapCenter = this.getMapCenter();
-    lastZoom = this.getZoomLevel();
+    mLastMapCenter = this.getMapCenter();
+    mLastZoom = this.getZoomLevel();
 }
 
 public void setOnLongpressListener(BysyklistMapView.OnLongpressListener listener) {
-    longpressListener = listener;
+    mLongpressListener = listener;
 }
 
 public void setOnZoomChangeListener(BysyklistMapView.OnZoomChangeListener listener) {
-    lastZoom = this.getZoomLevel();
-    zoomChangeListener = listener;
+    mLastZoom = this.getZoomLevel();
+    mZoomChangeListener = listener;
 }
 
 public void setOnPanChangeListener(BysyklistMapView.OnPanChangeListener listener) {
-    lastMapCenter = this.getMapCenter();
-    panChangeListener = listener;
+    mLastMapCenter = this.getMapCenter();
+    mPanChangeListener = listener;
 }
 
 @Override
@@ -104,35 +103,35 @@ public boolean onTouchEvent(MotionEvent event) {
 
 private void handleLongpress(final MotionEvent event) {
     if (event.getAction() == MotionEvent.ACTION_DOWN) {
-        longpressTimer = new Timer();
-        longpressTimer.schedule(new TimerTask() {
+        mLongpressTimer = new Timer();
+        mLongpressTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 GeoPoint longpressLocation = getProjection().fromPixels((int)event.getX(), 
                         (int)event.getY());
-                longpressListener.onLongpress(BysyklistMapView.this, longpressLocation);
+                mLongpressListener.onLongpress(BysyklistMapView.this, longpressLocation);
             }
             
         }, 750);
         
-        lastMapCenter = getMapCenter();
+        mLastMapCenter = getMapCenter();
     }
     
     if (event.getAction() == MotionEvent.ACTION_MOVE) {
             
-        if (!getMapCenter().equals(lastMapCenter)) {
-            longpressTimer.cancel();
+        if (!getMapCenter().equals(mLastMapCenter)) {
+            mLongpressTimer.cancel();
         }
         
-        lastMapCenter = getMapCenter();
+        mLastMapCenter = getMapCenter();
     }
     
     if (event.getAction() == MotionEvent.ACTION_UP) {
-        longpressTimer.cancel();
+        mLongpressTimer.cancel();
     }
     
     if (event.getPointerCount() > 1) {
-        longpressTimer.cancel();
+        mLongpressTimer.cancel();
     }
 }
 
@@ -141,30 +140,30 @@ public void computeScroll() {
     super.computeScroll();
     
     // Catch zoom level change
-    if (getZoomLevel() != lastZoom) {
+    if (getZoomLevel() != mLastZoom) {
         // if computeScroll called before timer counts down we should drop it and start it over again
-        zoomEventDelayTimer.cancel();
-        zoomEventDelayTimer = new Timer();
-        zoomEventDelayTimer.schedule(new TimerTask() {
+        mZoomEventDelayTimer.cancel();
+        mZoomEventDelayTimer = new Timer();
+        mZoomEventDelayTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                zoomChangeListener.onZoomChange(BysyklistMapView.this, getZoomLevel(), lastZoom);
-                lastZoom = getZoomLevel();
+                mZoomChangeListener.onZoomChange(BysyklistMapView.this, getZoomLevel(), mLastZoom);
+                mLastZoom = getZoomLevel();
             }
-        }, eventsTimeout);
+        }, mEventsTimeout);
     }
 
     // Catch panning
-    if (!lastMapCenter.equals(getMapCenter())) {
-        panEventDelayTimer.cancel();
-        panEventDelayTimer = new Timer();
-        panEventDelayTimer.schedule(new TimerTask() {
+    if (!mLastMapCenter.equals(getMapCenter())) {
+        mPanEventDelayTimer.cancel();
+        mPanEventDelayTimer = new Timer();
+        mPanEventDelayTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                panChangeListener.onPanChange(BysyklistMapView.this, getMapCenter(), lastMapCenter);
-                lastMapCenter = getMapCenter();
+                mPanChangeListener.onPanChange(BysyklistMapView.this, getMapCenter(), mLastMapCenter);
+                mLastMapCenter = getMapCenter();
             }
-        }, eventsTimeout);
+        }, mEventsTimeout);
     }
 }
 

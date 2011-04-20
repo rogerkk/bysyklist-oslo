@@ -18,10 +18,13 @@
 
 package no.rkkc.bysykkel.views;
 
+import com.google.android.TransparentPanel;
+
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.model.Rack;
+
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,24 +33,22 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.TextView;
 
-import com.google.android.TransparentPanel;
-
 /**
  * Panel for displaying rack name and availability information
  */
 public class RackInfoPanel extends TransparentPanel {
-    private int rackId;
+    private int mRackId;
     private static final String TAG = "Bysyklist-RackInfoPanel";
-    private Map map;
+    private Map mMap;
 
     public RackInfoPanel(Context context) {
         super(context);
-        map = (Map)context;
+        mMap = (Map)context;
     }
     
     public RackInfoPanel(Context context, AttributeSet attrs) {
         super(context, attrs);
-        map = (Map)context;
+        mMap = (Map)context;
     }    
 
     Handler handler = new Handler() {
@@ -58,7 +59,7 @@ public class RackInfoPanel extends TransparentPanel {
     };
     
     public void setRackId(int rackId) {
-        this.rackId = rackId;
+        this.mRackId = rackId;
     }
     
     /**
@@ -74,8 +75,8 @@ public class RackInfoPanel extends TransparentPanel {
                 Bundle bundle = new Bundle();
                 
                 try {
-                    Rack rack = ocbAdapter.getRack(rackId);
-                    map.setRackState(rack);
+                    Rack rack = ocbAdapter.getRack(mRackId);
+                    mMap.setRackState(rack);
                     
                     if (rack.isOnline()) {
                         bundle.putBoolean("online", true);

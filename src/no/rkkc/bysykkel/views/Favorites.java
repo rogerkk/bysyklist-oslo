@@ -1,14 +1,13 @@
 package no.rkkc.bysykkel.views;
 
-import java.util.ArrayList;
-
 import no.rkkc.bysykkel.Constants;
 import no.rkkc.bysykkel.MenuHelper;
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
-import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
+import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ListActivity;
@@ -17,6 +16,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,21 +24,20 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+
 public class Favorites extends ListActivity {
 
-    TextView selection;
-
-    private OsloCityBikeAdapter ocbAdapter;
-    private RackAdapter rackDbAdapter;
-    ArrayList<Rack> listItems = new ArrayList<Rack>();
-    AsyncTask<RowAdapter, RowAdapter, Void> refreshRackStatsTask;
+    private OsloCityBikeAdapter mOcbAdapter;
+    private RackAdapter mRackAdapter;
+    private ArrayList<Rack> mListItems = new ArrayList<Rack>();
+    private AsyncTask<RowAdapter, RowAdapter, Void> mRackStatsTask;
     
     static final int CONTEXT_STAR = 0;
     static final int CONTEXT_UNSTAR = 1;
@@ -51,9 +50,9 @@ public class Favorites extends ListActivity {
         setContentView(R.layout.favorites);
         registerForContextMenu(getListView());
 
-        ocbAdapter = (OsloCityBikeAdapter) new OsloCityBikeAdapter();
-        rackDbAdapter = (RackAdapter) new RackAdapter(this);
-        setListAdapter(new RowAdapter(this, R.layout.favorites_row, listItems));
+        mOcbAdapter = (OsloCityBikeAdapter) new OsloCityBikeAdapter();
+        mRackAdapter = (RackAdapter) new RackAdapter(this);
+        setListAdapter(new RowAdapter(this, R.layout.favorites_row, mListItems));
 
     }
     
@@ -75,13 +74,13 @@ public class Favorites extends ListActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        refreshRackStatsTask.cancel(true);
+        mRackStatsTask.cancel(true);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        rackDbAdapter.close();
+        mRackAdapter.close();
     }
     
     @Override
@@ -98,7 +97,7 @@ public class Favorites extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         
-        Rack rack = listItems.get(position);
+        Rack rack = mListItems.get(position);
         
         Intent intent = new Intent("no.rkkc.bysykkel.SHOW_RACK");
         intent.putExtra("rackId", rack.getId());
@@ -109,7 +108,7 @@ public class Favorites extends ListActivity {
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo; 
         
-        Rack rack = listItems.get(info.position);
+        Rack rack = mListItems.get(info.position);
         
         if (rack.isStarred()) {
             menu.add(Menu.NONE, CONTEXT_UNSTAR, 0, R.string.menu_unstar_item);
@@ -122,11 +121,11 @@ public class Favorites extends ListActivity {
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
         
-        Rack rack = listItems.get(menuInfo.position);
+        Rack rack = mListItems.get(menuInfo.position);
         
         if (item.getItemId() == CONTEXT_STAR || item.getItemId() == CONTEXT_UNSTAR) {
             rack.toggleStarred();
-            rackDbAdapter.save(rack);
+            mRackAdapter.save(rack);
             
             RowAdapter listAdapter = (RowAdapter) getListAdapter();
             listAdapter.notifyDataSetChanged();
@@ -157,18 +156,18 @@ public class Favorites extends ListActivity {
     }
 
     public void refreshRackStatistics() {
-        refreshRackStatsTask = new RefreshRackStatsTask().execute((RowAdapter)getListAdapter());
+        mRackStatsTask = new RefreshRackStatsTask().execute((RowAdapter)getListAdapter());
     }
     
     /**
      * Refreshes the list of racks to be displayed in our list.
      */
     private void refreshListItems() {
-        ArrayList<Rack> favorites = rackDbAdapter.getFavorites(15);
+        ArrayList<Rack> favorites = mRackAdapter.getFavorites(15);
     
         // Not quite sure why assigning tmpItems to listItems won't work, but.. well.. it doesn't.
-        listItems.clear();
-        listItems.addAll(favorites);
+        mListItems.clear();
+        mListItems.addAll(favorites);
     }
 
     class RefreshRackStatsTask extends AsyncTask<RowAdapter, RowAdapter, Void> {
@@ -202,10 +201,10 @@ public class Favorites extends ListActivity {
 
             // Load all rack statistics
             for (int i = 0; i < listAdapter.getCount(); i++) {
-                Rack rack = listItems.get(i);
+                Rack rack = mListItems.get(i);
                 
                 try {
-                    Rack tmpRack = ocbAdapter.getRack(rack.getId());
+                    Rack tmpRack = mOcbAdapter.getRack(rack.getId());
                     
                     if (tmpRack.hasBikeAndSlotInfo()) {
                         rack.setNumberOfEmptySlots(tmpRack.getNumberOfEmptySlots());
@@ -224,7 +223,7 @@ public class Favorites extends ListActivity {
                     rack.setNumberOfReadyBikes(-2);
 
                 } finally {
-                    listItems.set(i, rack);
+                    mListItems.set(i, rack);
                     publishProgress(listAdapter);
                 }
             }

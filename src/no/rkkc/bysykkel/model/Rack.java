@@ -21,14 +21,14 @@ package no.rkkc.bysykkel.model;
 import com.google.android.maps.GeoPoint;
 
 public class Rack {
-    private Integer id;
-    private String description;
-    private GeoPoint location;
-    private Integer viewCount;
-    private Boolean starred;
-    private Boolean online;
-    private Integer emptyLocks;
-    private Integer readyBikes;
+    private Integer mId;
+    private String mDescription;
+    private GeoPoint mLocation;
+    private Integer mViewCount;
+    private Boolean mStarred;
+    private Boolean mOnline;
+    private Integer mEmptyLocks;
+    private Integer nReadyBikes;
     
     public Rack(int id, String description, Integer latitude, 
             Integer longitude, 
@@ -36,18 +36,18 @@ public class Rack {
             Boolean online, Integer emptyLocks, 
             Integer readyBikes) {
         
-        this.id = id;
-        this.online = online;
-        this.description = description;
+        this.mId = id;
+        this.mOnline = online;
+        this.mDescription = description;
         if (latitude != null && longitude != null) {
-            this.location = new GeoPoint(latitude.intValue(), 
+            this.mLocation = new GeoPoint(latitude.intValue(), 
                                             longitude.intValue());
         }
         
-        this.viewCount = viewCount != null ? viewCount : 0;
-        this.starred    = starred != null ? starred : false;
-        this.emptyLocks = emptyLocks;
-        this.readyBikes = readyBikes;
+        this.mViewCount = viewCount != null ? viewCount : 0;
+        this.mStarred    = starred != null ? starred : false;
+        this.mEmptyLocks = emptyLocks;
+        this.nReadyBikes = readyBikes;
     }
     
     public Rack(int id, String description, Integer latitude, Integer longitude, Integer viewCount, Boolean starred) {
@@ -60,23 +60,23 @@ public class Rack {
 
 
     public int getId() {
-        return id;
+        return mId;
     }
 
     public boolean isOnline() {
-        return (online == null) ? false : online;
+        return (mOnline == null) ? false : mOnline;
     }
     
     public void setOnline(boolean isOnline) {
-        online = isOnline;
+        mOnline = isOnline;
     }
 
     public boolean hasInfoOnEmptyLocks() {
-        return (emptyLocks == null) ? false : true;
+        return (mEmptyLocks == null) ? false : true;
     }
     
     public int getNumberOfEmptySlots() {
-        return emptyLocks;
+        return mEmptyLocks;
     }
     
     public boolean hasEmptySlots() {
@@ -85,15 +85,15 @@ public class Rack {
 
     
     public void setNumberOfEmptySlots(int emptySlots) {
-        this.emptyLocks = emptySlots;
+        this.mEmptyLocks = emptySlots;
     }
     
     public boolean hasInfoOnReadyBikes() {
-        return (readyBikes == null) ? false : true;
+        return (nReadyBikes == null) ? false : true;
     }
 
     public int getNumberOfReadyBikes() {
-        return readyBikes;
+        return nReadyBikes;
     }
     
     public boolean hasReadyBikes() {
@@ -101,35 +101,35 @@ public class Rack {
     }
     
     public void setNumberOfReadyBikes(int readyBikes) {
-        this.readyBikes = readyBikes;
+        this.nReadyBikes = readyBikes;
     }
     
     public boolean hasDescription() {
-        return (description == null) ? false : true;
+        return (mDescription == null) ? false : true;
     }
 
     public String getDescription() {
-        return description;
+        return mDescription;
     }
     
     public void setDescription(String description) {
-        this.description = description; 
+        this.mDescription = description; 
     }
 
     public boolean hasLocationInfo() {
-        return (location == null) ? false : true;
+        return (mLocation == null) ? false : true;
     }
     
     public GeoPoint getLocation() {
-        return location;
+        return mLocation;
     }
     
     public void setLocation(GeoPoint location) {
-        this.location = location;
+        this.mLocation = location;
     }
     
     public void setLocation(int latitude, int longitude) {
-        this.location = new GeoPoint(latitude, longitude);
+        this.mLocation = new GeoPoint(latitude, longitude);
     }
     
     public boolean hasBikeAndSlotInfo() {
@@ -137,28 +137,28 @@ public class Rack {
     }
     
     public void setViewCount(Integer viewCount) {
-        this.viewCount = viewCount;
+        this.mViewCount = viewCount;
     }
     
     public Integer incrementViewCount() {
-        this.viewCount++;
-        return viewCount;
+        this.mViewCount++;
+        return mViewCount;
     }
 
     public Integer getViewCount() {
-        return viewCount;
+        return mViewCount;
     }
 
     public void setStarred(boolean isStarred) {
-        this.starred = isStarred;
+        this.mStarred = isStarred;
     }
 
     public Boolean isStarred() {
-        return starred;
+        return mStarred;
     }
     
     public void toggleStarred() {
-        starred = !starred;
+        mStarred = !mStarred;
     }
 
     public String toString() {

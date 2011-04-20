@@ -1,39 +1,39 @@
 package no.rkkc.bysykkel.model;
 
 public class Favorite {
-    private int id;
-    private int rackId;
-    private int counter;
-    private boolean starred;
+    private int mId;
+    private int mRackId;
+    private int mCounter;
+    private boolean mStarred;
     
     public Favorite(int id, int rackId, int counter, boolean starred) {
-        this.id = id;
-        this.rackId = rackId;
-        this.counter = counter;
-        this.starred = starred;
+        this.mId = id;
+        this.mRackId = rackId;
+        this.mCounter = counter;
+        this.mStarred = starred;
     }
 
     public int getCounter() {
-        return counter;
+        return mCounter;
     }
 
     public void setCounter(int counter) {
-        this.counter = counter;
+        this.mCounter = counter;
     }
 
     public boolean isStarred() {
-        return starred;
+        return mStarred;
     }
 
     public void setStarred(boolean starred) {
-        this.starred = starred;
+        this.mStarred = starred;
     }
 
     public int getId() {
-        return id;
+        return mId;
     }
 
     public int getRackId() {
-        return rackId;
+        return mRackId;
     }
 }

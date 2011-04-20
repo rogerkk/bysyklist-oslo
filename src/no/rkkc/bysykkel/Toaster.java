@@ -23,14 +23,14 @@ import android.content.Context;
 import android.widget.Toast;
 
 public class Toaster implements Runnable {
-    private Context context;
-    private String message;
-    private int duration;
+    private Context mContext;
+    private String mMessage;
+    private int mDuration;
     
     public Toaster(Activity activity, String message, int duration) {
-        this.context = activity;
-        this.message = message;
-        this.duration = duration;
+        this.mContext = activity;
+        this.mMessage = message;
+        this.mDuration = duration;
     }
     
     public static void toast(Activity activity, String message, int duration) {
@@ -42,6 +42,6 @@ public class Toaster implements Runnable {
     }
 
     public void run() {
-        Toast.makeText(context, message, duration).show();
+        Toast.makeText(mContext, mMessage, mDuration).show();
     }
 }
