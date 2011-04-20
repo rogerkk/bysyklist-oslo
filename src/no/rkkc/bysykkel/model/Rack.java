@@ -80,7 +80,7 @@ public class Rack {
     }
     
     public boolean hasEmptySlots() {
-    	return getNumberOfEmptySlots() >= 1;
+        return getNumberOfEmptySlots() >= 1;
     }
 
     
@@ -97,7 +97,7 @@ public class Rack {
     }
     
     public boolean hasReadyBikes() {
-    	return getNumberOfReadyBikes() >= 1;
+        return getNumberOfReadyBikes() >= 1;
     }
     
     public void setNumberOfReadyBikes(int readyBikes) {

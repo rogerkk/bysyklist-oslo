@@ -23,25 +23,25 @@ import android.content.Context;
 import android.widget.Toast;
 
 public class Toaster implements Runnable {
-	private Context context;
-	private String message;
-	private int duration;
-	
-	public Toaster(Activity activity, String message, int duration) {
-		this.context = activity;
-		this.message = message;
-		this.duration = duration;
-	}
-	
-	public static void toast(Activity activity, String message, int duration) {
-		activity.runOnUiThread(new Toaster(activity, message, duration));
-	}
-	
-	public static void toast(Activity activity, int id, int duration) {
-		toast(activity, activity.getText(id).toString(), duration);
-	}
+    private Context context;
+    private String message;
+    private int duration;
+    
+    public Toaster(Activity activity, String message, int duration) {
+        this.context = activity;
+        this.message = message;
+        this.duration = duration;
+    }
+    
+    public static void toast(Activity activity, String message, int duration) {
+        activity.runOnUiThread(new Toaster(activity, message, duration));
+    }
+    
+    public static void toast(Activity activity, int id, int duration) {
+        toast(activity, activity.getText(id).toString(), duration);
+    }
 
-	public void run() {
-		Toast.makeText(context, message, duration).show();
-	}
+    public void run() {
+        Toast.makeText(context, message, duration).show();
+    }
 }

@@ -30,11 +30,11 @@ import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapView;
 
 public class BysyklistMapView extends MapView {
-	
+    
 public interface OnLongpressListener {
     public void onLongpress(MapView view, GeoPoint longpressLocation);
 }
-	
+    
 public interface OnZoomChangeListener {
     public void onZoomChange(MapView view, int newZoom, int oldZoom);
 }
@@ -77,63 +77,63 @@ public BysyklistMapView(Context context, AttributeSet attrs, int defStyle) {
  * make sure it is run.
  */
 private void getCenterAndZoom() {
-	lastMapCenter = this.getMapCenter();
-	lastZoom = this.getZoomLevel();
+    lastMapCenter = this.getMapCenter();
+    lastZoom = this.getZoomLevel();
 }
 
 public void setOnLongpressListener(BysyklistMapView.OnLongpressListener listener) {
-	longpressListener = listener;
+    longpressListener = listener;
 }
 
 public void setOnZoomChangeListener(BysyklistMapView.OnZoomChangeListener listener) {
-	lastZoom = this.getZoomLevel();
+    lastZoom = this.getZoomLevel();
     zoomChangeListener = listener;
 }
 
 public void setOnPanChangeListener(BysyklistMapView.OnPanChangeListener listener) {
-	lastMapCenter = this.getMapCenter();
+    lastMapCenter = this.getMapCenter();
     panChangeListener = listener;
 }
 
 @Override
 public boolean onTouchEvent(MotionEvent event) {
-	handleLongpress(event);
-	
-	return super.onTouchEvent(event);
+    handleLongpress(event);
+    
+    return super.onTouchEvent(event);
 }
 
 private void handleLongpress(final MotionEvent event) {
-	if (event.getAction() == MotionEvent.ACTION_DOWN) {
-		longpressTimer = new Timer();
-		longpressTimer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				GeoPoint longpressLocation = getProjection().fromPixels((int)event.getX(), 
-						(int)event.getY());
-				longpressListener.onLongpress(BysyklistMapView.this, longpressLocation);
-			}
-			
-		}, 500);
-		
-		lastMapCenter = getMapCenter();
-	}
-	
-	if (event.getAction() == MotionEvent.ACTION_MOVE) {
-			
-		if (!getMapCenter().equals(lastMapCenter)) {
-			longpressTimer.cancel();
-		}
-		
-		lastMapCenter = getMapCenter();
-	}
-	
-	if (event.getAction() == MotionEvent.ACTION_UP) {
-		longpressTimer.cancel();
-	}
-	
-	if (event.getPointerCount() > 1) {
-		longpressTimer.cancel();
-	}
+    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+        longpressTimer = new Timer();
+        longpressTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                GeoPoint longpressLocation = getProjection().fromPixels((int)event.getX(), 
+                        (int)event.getY());
+                longpressListener.onLongpress(BysyklistMapView.this, longpressLocation);
+            }
+            
+        }, 750);
+        
+        lastMapCenter = getMapCenter();
+    }
+    
+    if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            
+        if (!getMapCenter().equals(lastMapCenter)) {
+            longpressTimer.cancel();
+        }
+        
+        lastMapCenter = getMapCenter();
+    }
+    
+    if (event.getAction() == MotionEvent.ACTION_UP) {
+        longpressTimer.cancel();
+    }
+    
+    if (event.getPointerCount() > 1) {
+        longpressTimer.cancel();
+    }
 }
 
 @Override

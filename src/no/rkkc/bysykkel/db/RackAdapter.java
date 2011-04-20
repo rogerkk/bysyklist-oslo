@@ -56,7 +56,7 @@ public class RackAdapter extends DatabaseAdapter {
         Cursor cursor = getReadableDatabase().query(TABLE, columns, ID + " = " + Integer.toString(id), null, null, null, null);
         
         if (cursor.getCount() == 0) {
-        	cursor.close();
+            cursor.close();
             return null;
         }
         
@@ -76,8 +76,8 @@ public class RackAdapter extends DatabaseAdapter {
                 liveRack = new OsloCityBikeAdapter().getRack(id);
                 rack.setOnline(liveRack.isOnline());
                 if (liveRack.hasBikeAndSlotInfo()) {
-	                rack.setNumberOfReadyBikes(liveRack.getNumberOfReadyBikes());
-	                rack.setNumberOfEmptySlots(liveRack.getNumberOfEmptySlots());
+                    rack.setNumberOfReadyBikes(liveRack.getNumberOfReadyBikes());
+                    rack.setNumberOfEmptySlots(liveRack.getNumberOfEmptySlots());
                 }
             } catch (OsloCityBikeException e) {
                 e.printStackTrace();

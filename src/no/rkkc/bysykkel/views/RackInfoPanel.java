@@ -36,82 +36,82 @@ import com.google.android.TransparentPanel;
  * Panel for displaying rack name and availability information
  */
 public class RackInfoPanel extends TransparentPanel {
-	private int rackId;
-	private static final String TAG = "Bysyklist-RackInfoPanel";
-	private Map map;
+    private int rackId;
+    private static final String TAG = "Bysyklist-RackInfoPanel";
+    private Map map;
 
-	public RackInfoPanel(Context context) {
-		super(context);
-		map = (Map)context;
-	}
-	
+    public RackInfoPanel(Context context) {
+        super(context);
+        map = (Map)context;
+    }
+    
     public RackInfoPanel(Context context, AttributeSet attrs) {
         super(context, attrs);
         map = (Map)context;
-    }	
+    }    
 
-	Handler handler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			setRackStatus(msg.getData());
-		}
-	};
-	
-	public void setRackId(int rackId) {
-		this.rackId = rackId;
-	}
-	
-	/**
-	 * Retrieves status info from ClearChannel and sends message to the handler to update the
-	 * panel with this status info.
-	 */
-	public void getStatusInfo() {
-		
-		new Thread(new Runnable() {
-			public void run() {
-				OsloCityBikeAdapter ocbAdapter= new OsloCityBikeAdapter();
-				Message msg = Message.obtain();
-				Bundle bundle = new Bundle();
-				
-				try {
-					Rack rack = ocbAdapter.getRack(rackId);
-					map.setRackState(rack);
-					
-					if (rack.isOnline()) {
-						bundle.putBoolean("online", true);
-						bundle.putInt("bikes", rack.getNumberOfReadyBikes());
-						bundle.putInt("slots", rack.getNumberOfEmptySlots());
-					} else {
-						bundle.putBoolean("online", false);
-					}
-				} catch (OsloCityBikeException e) {
-					Log.w(TAG, "Communication with ClearChannel failed");
-					bundle.putBoolean("error", true);
-				} finally {
-					msg.setData(bundle);
-					handler.sendMessage(msg);
-				}
-			}
-		}).start();
-	}
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            setRackStatus(msg.getData());
+        }
+    };
+    
+    public void setRackId(int rackId) {
+        this.rackId = rackId;
+    }
+    
+    /**
+     * Retrieves status info from ClearChannel and sends message to the handler to update the
+     * panel with this status info.
+     */
+    public void getStatusInfo() {
+        
+        new Thread(new Runnable() {
+            public void run() {
+                OsloCityBikeAdapter ocbAdapter= new OsloCityBikeAdapter();
+                Message msg = Message.obtain();
+                Bundle bundle = new Bundle();
+                
+                try {
+                    Rack rack = ocbAdapter.getRack(rackId);
+                    map.setRackState(rack);
+                    
+                    if (rack.isOnline()) {
+                        bundle.putBoolean("online", true);
+                        bundle.putInt("bikes", rack.getNumberOfReadyBikes());
+                        bundle.putInt("slots", rack.getNumberOfEmptySlots());
+                    } else {
+                        bundle.putBoolean("online", false);
+                    }
+                } catch (OsloCityBikeException e) {
+                    Log.w(TAG, "Communication with ClearChannel failed");
+                    bundle.putBoolean("error", true);
+                } finally {
+                    msg.setData(bundle);
+                    handler.sendMessage(msg);
+                }
+            }
+        }).start();
+    }
 
-	/**
-	 * Updates the panel with given data
-	 * 
-	 * @param mData
-	 */
-	private void setRackStatus(Bundle mData) {
-		TextView mInfoText = (TextView)findViewById(R.id.information);
-		if (mData.getBoolean("online")) {
-			String strFreeBikes = getContext().getString(R.string.rackdialog_freebikes);
-			strFreeBikes = String.format(strFreeBikes, mData.getInt("bikes"));
-			String strFreeSlots = getContext().getString(R.string.rackdialog_freeslots);
-			strFreeSlots = String.format(strFreeSlots, mData.getInt("slots"));
-			mInfoText.setText(strFreeBikes.concat("\n").concat(strFreeSlots));
-		} else if (mData.getBoolean("error")) {
-			mInfoText.setText(getContext().getString(R.string.error_communication_failed));
-		} else {
-			mInfoText.setText(getContext().getString(R.string.rackdialog_not_online));
-		}
-	}
+    /**
+     * Updates the panel with given data
+     * 
+     * @param mData
+     */
+    private void setRackStatus(Bundle mData) {
+        TextView mInfoText = (TextView)findViewById(R.id.information);
+        if (mData.getBoolean("online")) {
+            String strFreeBikes = getContext().getString(R.string.rackdialog_freebikes);
+            strFreeBikes = String.format(strFreeBikes, mData.getInt("bikes"));
+            String strFreeSlots = getContext().getString(R.string.rackdialog_freeslots);
+            strFreeSlots = String.format(strFreeSlots, mData.getInt("slots"));
+            mInfoText.setText(strFreeBikes.concat("\n").concat(strFreeSlots));
+        } else if (mData.getBoolean("error")) {
+            mInfoText.setText(getContext().getString(R.string.error_communication_failed));
+        } else {
+            mInfoText.setText(getContext().getString(R.string.rackdialog_not_online));
+        }
+    }
 }

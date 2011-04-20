@@ -28,20 +28,20 @@ import android.util.Log;
 
 public class Dispatcher extends Activity {
 
-	@Override
-	protected void onStart() {
-		super.onStart();
+    @Override
+    protected void onStart() {
+        super.onStart();
 
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		String screen = prefs.getString("startup-screen", "MAP");
-		
-		Log.d("Dispatcher", "Launching " + screen);
-		
-		if (screen.equalsIgnoreCase("FAVORITES")) {
-			Log.v("Dispatcher", "Inside favorites");
-			startActivity(new Intent(this, Favorites.class));
-		} else {
-			startActivity(new Intent(this, Map.class));
-		}
-	}
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String screen = prefs.getString("startup-screen", "MAP");
+        
+        Log.d("Dispatcher", "Launching " + screen);
+        
+        if (screen.equalsIgnoreCase("FAVORITES")) {
+            Log.v("Dispatcher", "Inside favorites");
+            startActivity(new Intent(this, Favorites.class));
+        } else {
+            startActivity(new Intent(this, Map.class));
+        }
+    }
 }

@@ -70,83 +70,83 @@ public class OsloCityBikeAdapter {
      * @throws IOException 
      */
     public ArrayList<Integer> getRacks() throws OsloCityBikeCommunicationException {
-    	ArrayList<Integer> rackIds = new ArrayList<Integer>();
+        ArrayList<Integer> rackIds = new ArrayList<Integer>();
         String wsMethod ="getRacks";
         
         String xml;
         try {
-        	xml = makeWebServiceCall(wsMethod);
-        	Element docElement = getXmlDocumentElement(xml);
-        	NodeList elements = docElement.getElementsByTagName("station");
-        	
-        	for (int i = 0; i < elements.getLength(); i++) {
-        		Integer rackId = Integer.valueOf(elements.item(i).getFirstChild().getNodeValue());
-        		if (rackId < 500) { // Racks with id over 500 seem to be for testing purposes
-        			rackIds.add(rackId);
-        		}
-        	}
+            xml = makeWebServiceCall(wsMethod);
+            Element docElement = getXmlDocumentElement(xml);
+            NodeList elements = docElement.getElementsByTagName("station");
+            
+            for (int i = 0; i < elements.getLength(); i++) {
+                Integer rackId = Integer.valueOf(elements.item(i).getFirstChild().getNodeValue());
+                if (rackId < 500) { // Racks with id over 500 seem to be for testing purposes
+                    rackIds.add(rackId);
+                }
+            }
         } catch (IOException e) {
-        	Log.v(TAG, e.getStackTrace().toString());
-        	throw new OsloCityBikeCommunicationException(e);
-		} catch (SAXException e) {
-			Log.v(TAG, e.getStackTrace().toString());
-			throw new OsloCityBikeCommunicationException(e);
-		} catch (ParserConfigurationException e) {
-			Log.v(TAG, e.getStackTrace().toString());
-			throw new OsloCityBikeCommunicationException(e);
-		} catch (URISyntaxException e) {
-			Log.v(TAG, e.getStackTrace().toString());
-			throw new OsloCityBikeCommunicationException(e);
-		}
+            Log.v(TAG, e.getStackTrace().toString());
+            throw new OsloCityBikeCommunicationException(e);
+        } catch (SAXException e) {
+            Log.v(TAG, e.getStackTrace().toString());
+            throw new OsloCityBikeCommunicationException(e);
+        } catch (ParserConfigurationException e) {
+            Log.v(TAG, e.getStackTrace().toString());
+            throw new OsloCityBikeCommunicationException(e);
+        } catch (URISyntaxException e) {
+            Log.v(TAG, e.getStackTrace().toString());
+            throw new OsloCityBikeCommunicationException(e);
+        }
         
         return rackIds;
     }
     
     public Rack getRack(int id) throws OsloCityBikeException {
-		HashMap<String, String> rackMap = getRackInfo(id);
-		
-		Boolean online = null;
-		if (rackMap.get("online") != null) {
-			online = Integer.parseInt(rackMap.get("online")) == 1? true : false;
-		}
-		
-		String description = rackMap.get("description");
-		
-		// Get rid of the ID from the string.
-		if (description.indexOf("-") > -1) {
-			description = description.substring(description.indexOf("-")+1);
-		}
-		
-		Integer latitude = null;
-		if (rackMap.get("latitude") != null) {
-			Double latitudeE6 = Float.parseFloat(rackMap.get("latitude"))*1E6;
-			latitude = latitudeE6.intValue();
-		}
-			
-		Integer longitude = null;
-		if (rackMap.get("longitute") != null) {
-			Double longitudeE6 = Float.parseFloat(rackMap.get("longitute"))*1E6;
-			longitude = longitudeE6.intValue();
-		}
-		
-		Integer emptyLocks = null;
-		if (rackMap.containsKey("empty_locks")
-				&& rackMap.get("empty_locks") != null
-				&& rackMap.get("empty_locks") != "") {
-			emptyLocks = Integer.parseInt(rackMap.get("empty_locks"));
-		}
-		
-		Integer readyBikes = null;
-		if (rackMap.containsKey("ready_bikes")
-				&& rackMap.get("ready_bikes") != null
-				&& rackMap.get("ready_bikes") != "") {
-			readyBikes = Integer.parseInt(rackMap.get("ready_bikes"));
-		}
-		
-		Rack rack = new Rack(id, description, latitude, longitude, 
-								online, emptyLocks, readyBikes);
-		
-		return rack;
+        HashMap<String, String> rackMap = getRackInfo(id);
+        
+        Boolean online = null;
+        if (rackMap.get("online") != null) {
+            online = Integer.parseInt(rackMap.get("online")) == 1? true : false;
+        }
+        
+        String description = rackMap.get("description");
+        
+        // Get rid of the ID from the string.
+        if (description.indexOf("-") > -1) {
+            description = description.substring(description.indexOf("-")+1);
+        }
+        
+        Integer latitude = null;
+        if (rackMap.get("latitude") != null) {
+            Double latitudeE6 = Float.parseFloat(rackMap.get("latitude"))*1E6;
+            latitude = latitudeE6.intValue();
+        }
+            
+        Integer longitude = null;
+        if (rackMap.get("longitute") != null) {
+            Double longitudeE6 = Float.parseFloat(rackMap.get("longitute"))*1E6;
+            longitude = longitudeE6.intValue();
+        }
+        
+        Integer emptyLocks = null;
+        if (rackMap.containsKey("empty_locks")
+                && rackMap.get("empty_locks") != null
+                && rackMap.get("empty_locks") != "") {
+            emptyLocks = Integer.parseInt(rackMap.get("empty_locks"));
+        }
+        
+        Integer readyBikes = null;
+        if (rackMap.containsKey("ready_bikes")
+                && rackMap.get("ready_bikes") != null
+                && rackMap.get("ready_bikes") != "") {
+            readyBikes = Integer.parseInt(rackMap.get("ready_bikes"));
+        }
+        
+        Rack rack = new Rack(id, description, latitude, longitude, 
+                                online, emptyLocks, readyBikes);
+        
+        return rack;
     }
     
     /** 
@@ -171,22 +171,22 @@ public class OsloCityBikeAdapter {
         String xml;
 
         try {
-        	xml = makeWebServiceCall(wsMethod);
-        	Log.v(OsloCityBikeAdapter.TAG, xml); // TODO: Remove this logging before release
+            xml = makeWebServiceCall(wsMethod);
+            Log.v(OsloCityBikeAdapter.TAG, xml); // TODO: Remove this logging before release
         } catch (Exception e) {
-        	throw new OsloCityBikeCommunicationException(e);
+            throw new OsloCityBikeCommunicationException(e);
         }
         
         try {
-        	Element docElement = getXmlDocumentElement(xml);
-        	
+            Element docElement = getXmlDocumentElement(xml);
+            
             // These are all the elements we wish to extract from the XML
             String elements[] = {"online", "description", "longitute", "latitude", "ready_bikes", "empty_locks"};
             HashMap<String, String> rackMap = new HashMap<String, String>();
             
             for (int i = 0; i < elements.length; i++) {
                 if (docElement.getElementsByTagName(elements[i]).getLength() > 0
-                	&& docElement.getElementsByTagName(elements[i]).item(0).hasChildNodes()) {
+                    && docElement.getElementsByTagName(elements[i]).item(0).hasChildNodes()) {
                     rackMap.put(elements[i], docElement.getElementsByTagName(elements[i]).item(0).getFirstChild().getNodeValue().trim());
                 } else {
                     rackMap.put(elements[i], null);
@@ -195,29 +195,29 @@ public class OsloCityBikeAdapter {
 
             return rackMap;
         } catch (Exception e) {
-        	Log.e("OsloCityBikeAdapter", e.getStackTrace().toString());
+            Log.e("OsloCityBikeAdapter", e.getStackTrace().toString());
             throw new OsloCityBikeParseException(e);
         }
     }
 
-	/**
-	 * Get the root DocumentElement of a given XML
-	 * 
-	 * @param xml
-	 * @return
-	 * @throws ParserConfigurationException
-	 * @throws FactoryConfigurationError
-	 * @throws SAXException
-	 * @throws IOException
-	 */
-	private Element getXmlDocumentElement(String xml)
-			throws ParserConfigurationException, FactoryConfigurationError,
-			SAXException, IOException {
-		DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		Document document = builder.parse(new InputSource(new StringReader(xml)));
-		Element docElement = document.getDocumentElement();
-		return docElement;
-	}
+    /**
+     * Get the root DocumentElement of a given XML
+     * 
+     * @param xml
+     * @return
+     * @throws ParserConfigurationException
+     * @throws FactoryConfigurationError
+     * @throws SAXException
+     * @throws IOException
+     */
+    private Element getXmlDocumentElement(String xml)
+            throws ParserConfigurationException, FactoryConfigurationError,
+            SAXException, IOException {
+        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document document = builder.parse(new InputSource(new StringReader(xml)));
+        Element docElement = document.getDocumentElement();
+        return docElement;
+    }
 
     /**
      * Make a web service call to ClearChannel
@@ -241,8 +241,8 @@ public class OsloCityBikeAdapter {
         httpResponse = httpClient.execute(httpGet);
         
         if (httpResponse.getStatusLine().getStatusCode() != 200) {
-        	Log.w(TAG, "Got HTTP status " + Integer.toString(httpResponse.getStatusLine().getStatusCode()) + " from ClearChannel");
-        	throw new OsloCityBikeCommunicationException(null);
+            Log.w(TAG, "Got HTTP status " + Integer.toString(httpResponse.getStatusLine().getStatusCode()) + " from ClearChannel");
+            throw new OsloCityBikeCommunicationException(null);
         }
 
         try {
@@ -253,8 +253,8 @@ public class OsloCityBikeAdapter {
             
             return returnXml;
         } catch (IOException e) {
-        	Log.e("OsloCityBikeAdapter", e.getStackTrace().toString());
-        	throw e;
+            Log.e("OsloCityBikeAdapter", e.getStackTrace().toString());
+            throw e;
         }
     }
     
@@ -286,27 +286,27 @@ public class OsloCityBikeAdapter {
     }
     
     public class OsloCityBikeException extends Exception {
-		private static final long serialVersionUID = -1658595799469140717L;
+        private static final long serialVersionUID = -1658595799469140717L;
 
-		public OsloCityBikeException(Exception e) {
-    		super(e);
-    	}
+        public OsloCityBikeException(Exception e) {
+            super(e);
+        }
     }
     
     public class OsloCityBikeCommunicationException extends OsloCityBikeException{
-		private static final long serialVersionUID = -4574284801307284546L;
+        private static final long serialVersionUID = -4574284801307284546L;
 
-		public OsloCityBikeCommunicationException(Exception e) {
-    		super(e);
-    	}
+        public OsloCityBikeCommunicationException(Exception e) {
+            super(e);
+        }
     }
 
     private class OsloCityBikeParseException extends OsloCityBikeException {
-		private static final long serialVersionUID = -5677634395427608346L;
+        private static final long serialVersionUID = -5677634395427608346L;
 
-		public OsloCityBikeParseException(Exception e) {
-    		super(e);
-    	}
+        public OsloCityBikeParseException(Exception e) {
+            super(e);
+        }
     }
 
 }
