@@ -75,6 +75,7 @@ public class Map extends MapActivity {
     private RacksOverlay mRackOverlay; 
     private RackStateThread mRackStateThread = new RackStateThread();
     private HashMap<Integer, RackState> mRackStateCache = new HashMap<Integer, RackState>();
+
     private GeoPoint mContextMenuGeoPoint = null;
     
     private static final String TAG = "Bysyklist-Map";
@@ -90,7 +91,7 @@ public class Map extends MapActivity {
         setContentView(R.layout.map);
         setupMapView();
         setupInfoPanel();
-        setupMyLocation();
+        setupMyLocationOverlay();
         
         if (isFirstRun()) {
             new RackSyncTask(this).execute((Void[])null);
@@ -118,24 +119,26 @@ public class Map extends MapActivity {
     private void restoreStateAfterOrientationChange() {
         MapContext mapContext = (MapContext)getLastNonConfigurationInstance();
         
-        mMapController.setZoom(mapContext.zoomLevel);
-        mMapController.setCenter(mapContext.mapCenter);
-        if (mapContext.highlightedRack != null) {
-            highlightRack(mapContext.highlightedRack);
-            showRackInfo(mapContext.highlightedRack);
+        mMapController.setZoom(mapContext.getZoomLevel());
+        mMapController.setCenter(mapContext.getMapCenter());
+        if (mapContext.mHighlightedRack != null) {
+            highlightRack(mapContext.getHighlightedRack());
+            showRackInfoPanel(mapContext.getHighlightedRack());
         }
-        mRackStateCache = mapContext.rackStateCache;
+        mRackStateCache = mapContext.getRackStateCache();
         
         for (RackState rackState: mRackStateCache.values()) {
             Rack rack = rackState.getRack();
             
-            if ((Integer)rack.getId() != mRackOverlay.highlightedRackId) {
+            if ((Integer)rack.getId() != mRackOverlay.mHighlightedRackId) {
                 mRackOverlay.setMarker(rackState.getRack());
             }
         }
     }
 
     private void setupListeners() {
+        
+        // Open context menu on longpress
         mMapView.setOnLongpressListener(new BysyklistMapView.OnLongpressListener() {
             public void onLongpress(final MapView view, GeoPoint longpressLocation) {
                 mContextMenuGeoPoint = longpressLocation;
@@ -147,12 +150,14 @@ public class Map extends MapActivity {
             }
         });
         
+        // Trigger rack state update on zoom
         mMapView.setOnZoomChangeListener(new BysyklistMapView.OnZoomChangeListener() {
             public void onZoomChange(MapView view, int newZoom, int oldZoom) {
                 mRackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
             }
         });
 
+        // Trigger rack state update on panning
         mMapView.setOnPanChangeListener(new BysyklistMapView.OnPanChangeListener() {
             public void onPanChange(MapView view, GeoPoint newCenter, GeoPoint oldCenter) {
                 mRackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);     
@@ -273,7 +278,6 @@ public class Map extends MapActivity {
         return super.onContextItemSelected(item);
     }
 
-    /* Menu */
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main, menu);
@@ -281,7 +285,6 @@ public class Map extends MapActivity {
         return true;
     }
 
-    /* Handles menu item selections */
     public boolean onOptionsItemSelected(MenuItem item) {
         MenuHelper menuHelper = new MenuHelper(this);
         return menuHelper.mapOptionsItemSelected(item);
@@ -295,12 +298,18 @@ public class Map extends MapActivity {
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            hideRackInfo();
+            // Any touch on the map (except a pin) should close the info panel, if it is open.
+            hideRackInfoPanel();
         }
         
         return super.dispatchTouchEvent(event);
     }
     
+    /**
+     * Checks if this is the first time the app has been run
+     * 
+     * @return boolean
+     */
     private boolean isFirstRun() {
         SharedPreferences settings = getPreferences(MODE_PRIVATE);
         if (settings.getLong("racksUpdatedTime", -1) == -1) {
@@ -319,6 +328,9 @@ public class Map extends MapActivity {
         
     }
 
+    /**
+     * Sets up the info panel displaying detailed rack information when used taps one of the pins.
+     */
     private void setupInfoPanel() {
         mViewHolder.infoPanel = (RackInfoPanel) findViewById(R.id.infoPanel);
         mViewHolder.infoPanel.setVisibility(View.GONE);
@@ -326,15 +338,12 @@ public class Map extends MapActivity {
         mViewHolder.information = (TextView) findViewById(R.id.information);
     }
 
-    private void setupMyLocation() {
+    private void setupMyLocationOverlay() {
         mMyLocation = new MyLocationOverlay(this, mMapView);
         mMyLocation.enableMyLocation();
         mMapView.getOverlays().add(mMyLocation);
     }
     
-    /**
-     * Check given intent for action that corresponds to one of our shortcuts and perform task.
-     */
     private void processIntent(Intent intent) {
         String action = intent.getAction();
         
@@ -348,7 +357,7 @@ public class Map extends MapActivity {
             Rack rack = mRackAdapter.getRack(intent.getIntExtra("rackId", 0));
             mMapController.setCenter(rack.getLocation());
             mRackOverlay.highlightRack(intent.getIntExtra("rackId", 0));
-            showRackInfo(rack);
+            showRackInfoPanel(rack);
         }
     }
     
@@ -497,7 +506,7 @@ public class Map extends MapActivity {
         Rack foundRack = null;
         Rack rack = null;
         for (LocationAndDistance lad : sortedStationLocations) {
-            rack = mRackAdapter.getRack(lad.getStationIndex(), true);
+            rack = mRackAdapter.getRack(lad.getRackId(), true);
             
             if (!rack.hasBikeAndSlotInfo()) continue; // Sometimes we get no information from the rack, so just skip it.
             
@@ -513,7 +522,7 @@ public class Map extends MapActivity {
         return foundRack;
     }
     
-    public void showRackInfo(Rack rack) {
+    public void showRackInfoPanel(Rack rack) {
         mViewHolder.name.setText(rack.getDescription());
         mViewHolder.information.setText(R.string.rackdialog_fetching);
         mViewHolder.infoPanel.setRackId(rack.getId());
@@ -524,59 +533,32 @@ public class Map extends MapActivity {
         mRackAdapter.save(rack);
     }
     
-    public void showRackInfo(int rackId) {
+    public void showRackInfoPanel(int rackId) {
         Rack rack = mRackAdapter.getRack(rackId);
-        showRackInfo(rack);
+        showRackInfoPanel(rack);
     }
     
-    public void hideRackInfo() {
+    public void hideRackInfoPanel() {
         if (mViewHolder.infoPanel != null) {
             mRackOverlay.resetHighlighting();
             mViewHolder.infoPanel.setVisibility(View.GONE);
         }
     }
     
-    /**
-     * @param nearestRackWithSlotOrBike
-     * @return
-     */
-    public void highlightRack(Integer rackId, final Integer duration) {
-        mRackOverlay.highlightRack(rackId);
-        
-        if (duration == null) {
-            return;
-        }
-
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Thread.sleep(duration);
-                } catch (InterruptedException e) {
-                    // Don't do anything. The finally-clause will revert to previous state anyway.
-                } finally {
-                    mRackOverlay.resetHighlighting();
-                    mMapView.postInvalidate();
-                }
-            }
-        });
-        
-        Rack rack = mRackAdapter.getRack(rackId);
-        rack.incrementViewCount();
-        mRackAdapter.save(rack);
-    }
-    
     public void highlightRack(Integer rackId) {
-        highlightRack(rackId, null);
+        mRackOverlay.highlightRack(rackId);
     }
 
+    /**
+     * Holds a rack and and a distance, and a comparison method. Used when searching for the
+     * closest rack (with lock or ready bike).
+     */
     private class LocationAndDistance implements Comparable<LocationAndDistance> {
         private Rack rack;
-        // private Location location;
         private float distanceInMeters;
         
         public LocationAndDistance(Rack rack, float distanceInMeters) {
             this.rack = rack;
-            // this.location = location;
             this.distanceInMeters = distanceInMeters;
         }
         
@@ -584,15 +566,18 @@ public class Map extends MapActivity {
             return (int) (this.distanceInMeters - another.distanceInMeters);
         }
         
-        public int getStationIndex() {
+        public int getRackId() {
             return rack.getId();
         }
     }
     
+    /**
+     * This is where all the pins indicating our racks are displayed.
+     */
     private class RacksOverlay extends ItemizedOverlay<OverlayItem> {
-        private List<OverlayItem> items = new ArrayList<OverlayItem>();
-        private ArrayList<Rack> racks;
-        private Integer highlightedRackId;
+        private List<OverlayItem> mItems = new ArrayList<OverlayItem>();
+        private ArrayList<Rack> mRacks;
+        private Integer mHighlightedRackId;
 
         /**
          * Marker indicating that there are both free bikes and locks
@@ -621,7 +606,7 @@ public class Map extends MapActivity {
         
         public RacksOverlay(Drawable default_marker, ArrayList<Rack> racks) {
             super(default_marker);
-            this.racks = racks;
+            this.mRacks = racks;
             boundCenterBottom(default_marker);
             
             setupMarkers();
@@ -654,11 +639,6 @@ public class Map extends MapActivity {
             boundCenterBottom(ok_marker);
             boundCenterBottom(info_marker);
             boundCenterBottom(data_missing_marker);
-        }
-        
-        public void highlightRack(int rackId) {
-            highlightedRackId = rackId;
-            setMarker(rackId, info_marker);
         }
         
         /**
@@ -697,6 +677,13 @@ public class Map extends MapActivity {
             setMarker(rackId, ok_marker);
         }
         
+        /**
+         * Set marker for the given pin to the given drawable. Invalidates the MapView to refresh
+         * the pins. 
+         * 
+         * @param rackId
+         * @param marker
+         */
         public void setMarker(int rackId, Drawable marker) {
             getItem(findOverlayIndex(rackId)).setMarker(marker);
             mMapView.postInvalidate();
@@ -719,19 +706,33 @@ public class Map extends MapActivity {
             }
         }
 
+        /**
+         * Sets the "info" marker on the rack pin. Used in combination with opening the
+         * info panel.
+         * 
+         * @param rackId
+         */
+        public void highlightRack(int rackId) {
+            mHighlightedRackId = rackId;
+            setMarker(rackId, info_marker);
+        }
+        
+        /**
+         * Removes the "info" marker from the rack pin and reverts to one representing the 
+         * cached rack state.
+         */
         public void resetHighlighting() {
-            if (highlightedRackId != null) {
-                setMarker(getRackState(highlightedRackId).getRack());
-                highlightedRackId = null;
+            if (mHighlightedRackId != null) {
+                setMarker(getRackState(mHighlightedRackId).getRack());
+                mHighlightedRackId = null;
             }
         }
         
         @Override
         protected OverlayItem createItem(int i) {
-            Rack rack = racks.get(i);
-//            Log.v(Map.TAG, "Adding rack "+rack.getId() + " to overlay");
+            Rack rack = mRacks.get(i);
             OverlayItem item = new OverlayItem(rack.getLocation(), rack.getDescription(), Integer.toString(rack.getId()));
-            items.add(item);
+            mItems.add(item);
 
             return item;
         }
@@ -743,7 +744,7 @@ public class Map extends MapActivity {
 
         @Override
         public int size() {
-            return racks.size();
+            return mRacks.size();
         }
         
         @Override
@@ -751,17 +752,23 @@ public class Map extends MapActivity {
             Rack rack = findRack(i);
             
             highlightRack(rack.getId());
-            showRackInfo(rack);
+            showRackInfoPanel(rack);
             
             return true;
         }
 
+        /**
+         * Retrieves a Rack object of the object represented by overlayIndex.
+         * 
+         * @param overlayIndex
+         * @return 
+         */
         private Rack findRack(int overlayIndex) {
             Rack rack = null;
-            for (int i = 0; i < racks.size(); i++) {
-                rack = racks.get(i);
+            for (int i = 0; i < mRacks.size(); i++) {
+                rack = mRacks.get(i);
                 int rackId = rack.getId();
-                int overlayIndexRackId = Integer.parseInt(items.get(overlayIndex).getSnippet());
+                int overlayIndexRackId = Integer.parseInt(mItems.get(overlayIndex).getSnippet());
                 
                 if (rackId == overlayIndexRackId) {
                     return rack;
@@ -773,9 +780,15 @@ public class Map extends MapActivity {
                     + " doesn't exists as rack");
         }
         
+        /**
+         * Searches through the overlays to find the overlay matching the given rack id.
+         * 
+         * @param rackId
+         * @return index of overlay matching the rack id.
+         */
         private int findOverlayIndex(int rackId) {
             for (int i = 0; i < this.size(); i++) {
-                if (rackId == Integer.parseInt(items.get(i).getSnippet())) {
+                if (rackId == Integer.parseInt(mItems.get(i).getSnippet())) {
                     return i;
                 }
             }
@@ -786,11 +799,16 @@ public class Map extends MapActivity {
         }
     }
     
+    /**
+     * From the users location, searches out the nearest rack with eiter available bikes or rack. 
+     * It then proceeds to animate to this location, marking the rack and displaying the info
+     * panel
+     */
     public class ShowNearestRackTask extends AsyncTask<Object, Void, Void> {
-        int dialogId;
-        FindRackCriteria criteria;
-        GeoPoint geoPoint;
-        Rack nearestRack;
+        private int dialogId;
+        private FindRackCriteria criteria;
+        private GeoPoint geoPoint;
+        private Rack nearestRack;
         
         public ShowNearestRackTask(FindRackCriteria criteria, GeoPoint geoPoint) {
             super();
@@ -812,7 +830,7 @@ public class Map extends MapActivity {
         protected void onPreExecute() {
             super.onPreExecute();
             
-            hideRackInfo();
+            hideRackInfoPanel();
             mRackOverlay.resetHighlighting();
             showDialog(dialogId);
         }
@@ -827,12 +845,9 @@ public class Map extends MapActivity {
                 // No rack found. Inform user and exit.
                 Toaster.toast(Map.this, R.string.error_search_failed, Toast.LENGTH_SHORT);
             } else {
-                highlightRack(nearestRack.getId(), 3000);
-                showRackInfo(nearestRack);
+                highlightRack(nearestRack.getId());
+                showRackInfoPanel(nearestRack);
                 animateToRack(nearestRack);
-                
-                // Show stats for the closest rack
-                Toaster.toast(Map.this, getRackInfoText(nearestRack, criteria), Toast.LENGTH_SHORT);
             }
         }
 
@@ -853,36 +868,6 @@ public class Map extends MapActivity {
             nearestRack = getClosestRack(searchPoint, criteria);
             return null;
         }
-        
-        /**
-         * Constructs string that is to be displayed to user when rack with bikes or free locks has been found
-         * 
-         * @param rack
-         * @param criteria
-         * @return
-         */
-        private String getRackInfoText(Rack rack, FindRackCriteria criteria) {
-            final int noOfFreeItems;;
-            final String itemType;
-            if (criteria == FindRackCriteria.FreeSlot) {
-                noOfFreeItems = rack.getNumberOfEmptySlots();
-                if (noOfFreeItems > 1) {
-                    itemType = getText(R.string.word_slots).toString();
-                } else {
-                    itemType = getText(R.string.word_slot).toString();
-                }
-            } else {
-                noOfFreeItems = rack.getNumberOfReadyBikes();
-                if (noOfFreeItems > 1) {
-                    itemType = getText(R.string.word_bikes).toString();
-                } else {
-                    itemType = getText(R.string.word_bike).toString();
-                }
-            }
-            
-            return Integer.toString(noOfFreeItems) + " " + itemType;
-        }
-        
     }
     
     /**
@@ -893,10 +878,24 @@ public class Map extends MapActivity {
      * update is postponed.
      */
     class RackStateThread extends Thread {
+          /**
+           * We update rack status every minute.
+           */
           private static final int TIME_BETWEEN_UPDATES = 60000;
-          static final int UPDATE_VISIBLE_RACKS = 1;
-          public Handler mHandler;
+          
+          /**
+           * An ID describing the message type we pass to the handler to trigger
+           * status updates.
+           */
+          public static final int UPDATE_VISIBLE_RACKS = 1;
+          
+          /**
+           * If the Thread is disabled, ie. in onPause(), we don't set off a new (delayed) sync
+           * message. No new messages should be fired until it gets enabled again.
+           */
           private boolean isDisabled;
+          
+          public Handler mHandler;
 
           public void run() {
               Looper.prepare();
@@ -938,8 +937,8 @@ public class Map extends MapActivity {
                           
                           runOnUiThread(new Runnable() {
                                 public void run() {
-                                    if (mRackOverlay.highlightedRackId == null ||
-                                            rack.getId() != mRackOverlay.highlightedRackId) {
+                                    if (mRackOverlay.mHighlightedRackId == null ||
+                                            rack.getId() != mRackOverlay.mHighlightedRackId) {
                                         mRackOverlay.setMarker(rack);
                                     }
                                 }
@@ -1011,28 +1010,31 @@ public class Map extends MapActivity {
         /**
          * Time in unix time (ms since epoch) when rack this rack was stored.
          */
-        long lastUpdated;
+        private long mLastUpdated;
         
-        Rack rack;
+        /**
+         * The Rack info for which this class is storing state.
+         */
+        private Rack mRack;
         
         public RackState(Rack rack) {
             setRack(rack);
         }
         
         public long getLastUpdated() {
-            return lastUpdated;
+            return mLastUpdated;
         }
         
         public void setLastUpdate() {
-            this.lastUpdated = System.currentTimeMillis();
+            this.mLastUpdated = System.currentTimeMillis();
         }
         
         public Rack getRack() {
-            return rack;
+            return mRack;
         }
         
         public void setRack(Rack rack) {
-            this.rack = rack;
+            this.mRack = rack;
             setLastUpdate();
         }
         
@@ -1058,16 +1060,32 @@ public class Map extends MapActivity {
      * Class for keeping all the context we need to rebuild our map after orientation change
      */
     private class MapContext {
-        int zoomLevel;
-        GeoPoint mapCenter;
-        Integer highlightedRack;
-        HashMap<Integer, RackState> rackStateCache;
-        
+        private int mZoomLevel;
+        private GeoPoint mMapCenter;
+        private Integer mHighlightedRack;
+        private HashMap<Integer, RackState> mRackStateCache;
+
         public MapContext() {
-            this.zoomLevel = mMapView.getZoomLevel();
-            this.mapCenter = mMapView.getMapCenter();
-            this.highlightedRack = mRackOverlay.highlightedRackId;
-            this.rackStateCache = Map.this.mRackStateCache;
+            this.mZoomLevel = mMapView.getZoomLevel();
+            this.mMapCenter = mMapView.getMapCenter();
+            this.mHighlightedRack = mRackOverlay.mHighlightedRackId;
+            this.mRackStateCache = Map.this.mRackStateCache;
+        }
+
+        public int getZoomLevel() {
+            return mZoomLevel;
+        }
+
+        public GeoPoint getMapCenter() {
+            return mMapCenter;
+        }
+
+        public Integer getHighlightedRack() {
+            return mHighlightedRack;
+        }
+        
+        public HashMap<Integer, RackState> getRackStateCache() {
+            return mRackStateCache;
         }
     }
 }
