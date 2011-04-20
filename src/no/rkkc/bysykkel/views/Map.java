@@ -916,8 +916,8 @@ public class Map extends MapActivity {
                        * include a little extra space around the visible area, since the marker
                        * icon may be visible if the point is just outside the screen.
                        */
-                      GeoPoint topLeft = mMapView.getProjection().fromPixels(0, -30);
-                      GeoPoint bottomRight = mMapView.getProjection().fromPixels(mMapView.getWidth()+30, mMapView.getHeight()+30);
+                      GeoPoint topLeft = mMapView.getProjection().fromPixels(-15, 0);
+                      GeoPoint bottomRight = mMapView.getProjection().fromPixels(mMapView.getWidth()+15, mMapView.getHeight()+35);
                       
                       Integer[] rackIds = mRackAdapter.getRackIds(topLeft, bottomRight);
 
