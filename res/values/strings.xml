@@ -4,8 +4,8 @@
 	
 	<string name="word_bike">sykkel</string>
     <string name="word_bikes">sykler</string>
-    <string name="word_slot">lås</string>
-	<string name="word_slots">låser</string>
+    <string name="word_lock">lås</string>
+	<string name="word_locks">låser</string>
 	<string name="word_close">Lukk</string>
 	
 	<string name="map">Kart</string>
@@ -14,8 +14,8 @@
 	<string name="my_location">Min posisjon</string>
     <string name="nearest_bike">Nærmeste sykkel</string>
     <string name="find_bike">Sykkel</string>
-    <string name="nearest_slot">Nærmeste lås</string>
-    <string name="find_slot">Lås</string>
+    <string name="nearest_lock">Nærmeste lås</string>
+    <string name="find_lock">Lås</string>
 	
 	<string name="syncdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
 	<string name="syncdialog_error">En feil oppsto under oppdatering av stativer. Dette kan skyldes at ClearChannels tjeneste ikke er tilgjengelig for øyeblikket.\n\nDu kan oppdatere senere, eller forsøke på nytt nå.</string>
@@ -28,12 +28,12 @@
 	<string name="rackdialog_title">Om stativet</string>
 	<string name="rackdialog_fetching">Henter data om ledige låser og sykler...</string>
 	<string name="rackdialog_freebikes">Ledige sykler: %d</string>
-	<string name="rackdialog_freeslots">Ledige låser: %d</string>
+	<string name="rackdialog_freelocks">Ledige låser: %d</string>
 	<string name="rackdialog_not_online">Ingen kontakt med stativet.</string>
 	<string name="rackdialog_dismiss">OK</string>
 	
 	<string name="favorites_freebikes">Sykler: %d</string>
-	<string name="favorites_freeslots">Låser: %d</string>
+	<string name="favorites_freelocks">Låser: %d</string>
 	<string name="waiting_for_data">Venter på data...</string>
 	
 	<string name="choose_shortcut">Velg snarvei</string>

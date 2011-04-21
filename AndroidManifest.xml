@@ -38,8 +38,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             
-            <intent-filter android:label="@string/nearest_slot">
-                <action android:name="no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT" />
+            <intent-filter android:label="@string/nearest_lock">
+                <action android:name="no.rkkc.bysykkel.FIND_NEAREST_EMPTY_LOCK" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             

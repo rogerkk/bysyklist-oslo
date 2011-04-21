@@ -75,17 +75,17 @@ public class Rack {
         return (mEmptyLocks == null) ? false : true;
     }
     
-    public int getNumberOfEmptySlots() {
+    public int getNumberOfEmptyLocks() {
         return mEmptyLocks;
     }
     
-    public boolean hasEmptySlots() {
-        return getNumberOfEmptySlots() >= 1;
+    public boolean hasEmptyLocks() {
+        return getNumberOfEmptyLocks() >= 1;
     }
 
     
-    public void setNumberOfEmptySlots(int emptySlots) {
-        this.mEmptyLocks = emptySlots;
+    public void setNumberOfEmptyLocks(int emptyLocks) {
+        this.mEmptyLocks = emptyLocks;
     }
     
     public boolean hasInfoOnReadyBikes() {
@@ -132,7 +132,7 @@ public class Rack {
         this.mLocation = new GeoPoint(latitude, longitude);
     }
     
-    public boolean hasBikeAndSlotInfo() {
+    public boolean hasBikeAndLockInfo() {
         return hasInfoOnReadyBikes() && hasInfoOnEmptyLocks();
     }
     

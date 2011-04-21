@@ -103,7 +103,7 @@ public class Map extends MapActivity {
         if (getLastNonConfigurationInstance() != null) {
             restoreStateAfterOrientationChange();
         } else if ("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE".equals(getIntent().getAction())
-            || "no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT".equals(getIntent().getAction())
+            || "no.rkkc.bysykkel.FIND_NEAREST_EMPTY_LOCK".equals(getIntent().getAction())
             || "no.rkkc.bysykkel.SHOW_RACK".equals(getIntent().getAction())) {
             // TODO: Should really find a better way to single out these intents
             processIntent(getIntent());
@@ -243,15 +243,15 @@ public class Map extends MapActivity {
                 bikeSearchDialog.setCancelable(true);
                 
                 return bikeSearchDialog;
-            case Constants.DIALOG_SEARCHING_SLOT:
-                ProgressDialog slotSearchDialog = new ProgressDialog(this);
-                String slotMessage = String.format(getString(R.string.searchdialog_message_first), 
-                        getString(R.string.word_slot));
-                slotSearchDialog.setMessage(slotMessage);
-                slotSearchDialog.setIndeterminate(true);
-                slotSearchDialog.setCancelable(true);
+            case Constants.DIALOG_SEARCHING_LOCK:
+                ProgressDialog lockSearchDialog = new ProgressDialog(this);
+                String lockMessage = String.format(getString(R.string.searchdialog_message_first), 
+                        getString(R.string.word_lock));
+                lockSearchDialog.setMessage(lockMessage);
+                lockSearchDialog.setIndeterminate(true);
+                lockSearchDialog.setCancelable(true);
                 
-                return slotSearchDialog;
+                return lockSearchDialog;
             case Constants.DIALOG_ABOUT:
                 return new AboutDialog(this);
         }
@@ -262,16 +262,16 @@ public class Map extends MapActivity {
     @Override
     public void onCreateContextMenu(ContextMenu  menu, View  v, ContextMenu.ContextMenuInfo menuInfo) {
         menu.add(Menu.NONE, Menu.FIRST, Menu.NONE, getString(R.string.nearest_bike));
-        menu.add(Menu.NONE, Menu.FIRST+1, Menu.NONE, getString(R.string.nearest_slot));
+        menu.add(Menu.NONE, Menu.FIRST+1, Menu.NONE, getString(R.string.nearest_lock));
     }
 
     public boolean onContextItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case Menu.FIRST:
-                new ShowNearestRackTask(FindRackCriteria.ReadyBike, mContextMenuGeoPoint).execute();
+                new ShowNearestRackTask(FindRackCriteria.READY_BIKE, mContextMenuGeoPoint).execute();
                 return true;
             case Menu.FIRST+1:
-                new ShowNearestRackTask(FindRackCriteria.FreeSlot, mContextMenuGeoPoint).execute();
+                new ShowNearestRackTask(FindRackCriteria.EMPTY_LOCK, mContextMenuGeoPoint).execute();
                 return true;
         }
             
@@ -350,9 +350,9 @@ public class Map extends MapActivity {
         if (action == null) {
             return;
         } else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE")) {
-            new ShowNearestRackTask(FindRackCriteria.ReadyBike).execute();
-        } else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT")) {
-            new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
+            new ShowNearestRackTask(FindRackCriteria.READY_BIKE).execute();
+        } else if (action.equals("no.rkkc.bysykkel.FIND_NEAREST_EMPTY_LOCK")) {
+            new ShowNearestRackTask(FindRackCriteria.EMPTY_LOCK).execute();
         } else if (action.equals("no.rkkc.bysykkel.SHOW_RACK")) {
             Rack rack = mRackAdapter.getRack(intent.getIntExtra("rackId", 0));
             mMapController.setCenter(rack.getLocation());
@@ -403,10 +403,10 @@ public class Map extends MapActivity {
     }
 
     /**
-     * @param closestRackWithSlotOrBike
+     * @param closestRackWithLockOrBike
      */
-    private void animateToRack(Rack closestRackWithSlotOrBike) {
-        mMapController.animateTo(closestRackWithSlotOrBike.getLocation());
+    private void animateToRack(Rack closestRackWithLockOrBike) {
+        mMapController.animateTo(closestRackWithLockOrBike.getLocation());
     }
 
     /**
@@ -508,11 +508,11 @@ public class Map extends MapActivity {
         for (LocationAndDistance lad : sortedStationLocations) {
             rack = mRackAdapter.getRack(lad.getRackId(), true);
             
-            if (!rack.hasBikeAndSlotInfo()) continue; // Sometimes we get no information from the rack, so just skip it.
+            if (!rack.hasBikeAndLockInfo()) continue; // Sometimes we get no information from the rack, so just skip it.
             
-            if ((criteria == FindRackCriteria.ReadyBike && rack.getNumberOfReadyBikes() > 0)
-                    || (criteria == FindRackCriteria.FreeSlot && 
-                            rack.getNumberOfEmptySlots() > 0)) {
+            if ((criteria == FindRackCriteria.READY_BIKE && rack.getNumberOfReadyBikes() > 0)
+                    || (criteria == FindRackCriteria.EMPTY_LOCK && 
+                            rack.getNumberOfEmptyLocks() > 0)) {
                 foundRack = rack;
                 Log.v(Map.TAG, "Found station:" + foundRack);
                 break;
@@ -695,11 +695,11 @@ public class Map extends MapActivity {
          * @param rack 
          */
         public void setMarker(Rack rack) {
-            if (rack.isOnline() && rack.hasBikeAndSlotInfo() && rack.hasReadyBikes() && rack.hasEmptySlots()) {
+            if (rack.isOnline() && rack.hasBikeAndLockInfo() && rack.hasReadyBikes() && rack.hasEmptyLocks()) {
                 setOkMarker(rack.getId());
-            } else if (rack.isOnline() && rack.hasBikeAndSlotInfo() && rack.hasReadyBikes()) {
+            } else if (rack.isOnline() && rack.hasBikeAndLockInfo() && rack.hasReadyBikes()) {
                 setReadyBikesMarker(rack.getId());
-            } else if (rack.isOnline() && rack.hasBikeAndSlotInfo() && rack.hasEmptySlots()) {
+            } else if (rack.isOnline() && rack.hasBikeAndLockInfo() && rack.hasEmptyLocks()) {
                 setEmptyLocksMarker(rack.getId());
             } else {
                 setDataMissingMarker(rack.getId());
@@ -813,10 +813,10 @@ public class Map extends MapActivity {
         public ShowNearestRackTask(FindRackCriteria criteria, GeoPoint geoPoint) {
             super();
             
-            if (criteria == FindRackCriteria.ReadyBike) {
+            if (criteria == FindRackCriteria.READY_BIKE) {
                 this.dialogId = Constants.DIALOG_SEARCHING_BIKE;
             } else {
-                this.dialogId = Constants.DIALOG_SEARCHING_SLOT;
+                this.dialogId = Constants.DIALOG_SEARCHING_LOCK;
             }
             this.criteria = criteria;
             this.geoPoint = geoPoint;

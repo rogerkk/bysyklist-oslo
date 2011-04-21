@@ -42,10 +42,10 @@ public class MenuHelper {
                 mapActivity.animateToMyLocation();
                 return true;
             case R.id.menuitem_nearest_bike:
-                mapActivity.new ShowNearestRackTask(FindRackCriteria.ReadyBike).execute();
+                mapActivity.new ShowNearestRackTask(FindRackCriteria.READY_BIKE).execute();
                 return true;
-            case R.id.menuitem_nearest_slot:
-                mapActivity.new ShowNearestRackTask(FindRackCriteria.FreeSlot).execute();
+            case R.id.menuitem_nearest_lock:
+                mapActivity.new ShowNearestRackTask(FindRackCriteria.EMPTY_LOCK).execute();
                 return true;
             case R.id.menuitem_favorites:
                 Intent favoritesIntent = new Intent(mapActivity, Favorites.class);

@@ -224,12 +224,12 @@ public class Favorites extends ListActivity {
                 try {
                     Rack tmpRack = mOcbAdapter.getRack(rack.getId());
                     
-                    if (tmpRack.hasBikeAndSlotInfo()) {
-                        rack.setNumberOfEmptySlots(tmpRack.getNumberOfEmptySlots());
+                    if (tmpRack.hasBikeAndLockInfo()) {
+                        rack.setNumberOfEmptyLocks(tmpRack.getNumberOfEmptyLocks());
                         rack.setNumberOfReadyBikes(tmpRack.getNumberOfReadyBikes());
                     } else {
-                        // Set negative values to signalize to RowAdapter rack did not contain any slot/bike info.
-                        rack.setNumberOfEmptySlots(-1);
+                        // Set negative values to signalize to RowAdapter rack did not contain any lock/bike info.
+                        rack.setNumberOfEmptyLocks(-1);
                         rack.setNumberOfReadyBikes(-1);
                     }
                         
@@ -237,7 +237,7 @@ public class Favorites extends ListActivity {
                     Log.v("Test", e.getStackTrace().toString());
 
                     // Set negative values to signalize to RowAdapter that communication failed
-                    rack.setNumberOfEmptySlots(-2);
+                    rack.setNumberOfEmptyLocks(-2);
                     rack.setNumberOfReadyBikes(-2);
 
                 } finally {
@@ -282,17 +282,17 @@ public class Favorites extends ListActivity {
             Rack rack = items.get(position);
             wrapper.getRackName().setText(rack.getDescription());
 
-            // Display number of ready bikes / free slots
-            if (rack.hasBikeAndSlotInfo() && rack.getNumberOfEmptySlots() == -1) {
+            // Display number of ready bikes / free locks
+            if (rack.hasBikeAndLockInfo() && rack.getNumberOfEmptyLocks() == -1) {
                 wrapper.getRackInfo().setText(R.string.rackdialog_not_online);
-            } else if (rack.hasBikeAndSlotInfo() && rack.getNumberOfEmptySlots() == -2) {
+            } else if (rack.hasBikeAndLockInfo() && rack.getNumberOfEmptyLocks() == -2) {
                 wrapper.getRackInfo().setText(R.string.error_communication_failed);
-            } else if (rack.hasBikeAndSlotInfo()) {
+            } else if (rack.hasBikeAndLockInfo()) {
                 String strFreeBikes = getContext().getString(R.string.favorites_freebikes);
                 strFreeBikes = String.format(strFreeBikes, rack.getNumberOfReadyBikes());
-                String strFreeSlots = getContext().getString(R.string.favorites_freeslots);
-                strFreeSlots = String.format(strFreeSlots, rack.getNumberOfEmptySlots());
-                wrapper.getRackInfo().setText(strFreeBikes.concat(", ").concat(strFreeSlots));
+                String strFreeLocks = getContext().getString(R.string.favorites_freelocks);
+                strFreeLocks = String.format(strFreeLocks, rack.getNumberOfEmptyLocks());
+                wrapper.getRackInfo().setText(strFreeBikes.concat(", ").concat(strFreeLocks));
             } else {
                 // TODO: Add some way of displaying any communication errors here
                 wrapper.getRackInfo().setText(R.string.waiting_for_data);

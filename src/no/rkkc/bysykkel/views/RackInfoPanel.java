@@ -81,7 +81,7 @@ public class RackInfoPanel extends TransparentPanel {
                     if (rack.isOnline()) {
                         bundle.putBoolean("online", true);
                         bundle.putInt("bikes", rack.getNumberOfReadyBikes());
-                        bundle.putInt("slots", rack.getNumberOfEmptySlots());
+                        bundle.putInt("locks", rack.getNumberOfEmptyLocks());
                     } else {
                         bundle.putBoolean("online", false);
                     }
@@ -106,9 +106,9 @@ public class RackInfoPanel extends TransparentPanel {
         if (mData.getBoolean("online")) {
             String strFreeBikes = getContext().getString(R.string.rackdialog_freebikes);
             strFreeBikes = String.format(strFreeBikes, mData.getInt("bikes"));
-            String strFreeSlots = getContext().getString(R.string.rackdialog_freeslots);
-            strFreeSlots = String.format(strFreeSlots, mData.getInt("slots"));
-            mInfoText.setText(strFreeBikes.concat("\n").concat(strFreeSlots));
+            String strFreeLocks = getContext().getString(R.string.rackdialog_freelocks);
+            strFreeLocks = String.format(strFreeLocks, mData.getInt("locks"));
+            mInfoText.setText(strFreeBikes.concat("\n").concat(strFreeLocks));
         } else if (mData.getBoolean("error")) {
             mInfoText.setText(getContext().getString(R.string.error_communication_failed));
         } else {

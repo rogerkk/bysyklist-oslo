@@ -94,9 +94,9 @@ public class RackAdapter extends DatabaseAdapter {
             try {
                 liveRack = new OsloCityBikeAdapter().getRack(id);
                 rack.setOnline(liveRack.isOnline());
-                if (liveRack.hasBikeAndSlotInfo()) {
+                if (liveRack.hasBikeAndLockInfo()) {
                     rack.setNumberOfReadyBikes(liveRack.getNumberOfReadyBikes());
-                    rack.setNumberOfEmptySlots(liveRack.getNumberOfEmptySlots());
+                    rack.setNumberOfEmptyLocks(liveRack.getNumberOfEmptyLocks());
                 }
             } catch (OsloCityBikeException e) {
                 e.printStackTrace();

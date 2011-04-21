@@ -26,7 +26,7 @@ public class Shortcuts extends Activity {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.choose_shortcut);
         String[] items = new String[] {getString(R.string.nearest_bike), 
-                                        getString(R.string.nearest_slot), 
+                                        getString(R.string.nearest_lock), 
                                         getString(R.string.map), 
                                         getString(R.string.favorites)};
         
@@ -52,14 +52,14 @@ public class Shortcuts extends Activity {
 
                     break;
                 case 1:
-                    shortcutIntent = new Intent("no.rkkc.bysykkel.FIND_NEAREST_FREE_SLOT");
+                    shortcutIntent = new Intent("no.rkkc.bysykkel.FIND_NEAREST_EMPTY_LOCK");
                     
                     /*
                      * Setup container
                      */
                     intent = new Intent();
                     intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-                    intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getText(R.string.find_slot));
+                    intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getText(R.string.find_lock));
                     iconResource = Intent.ShortcutIconResource.fromContext(Shortcuts.this, R.drawable.launcher_icon);
                     intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, iconResource);
                     setResult(RESULT_OK, intent);

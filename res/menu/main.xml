@@ -5,8 +5,8 @@
 	    <item android:id="@+id/menuitem_nearest_bike"
 	          android:title="@string/nearest_bike"
 	          />
-	    <item android:id="@+id/menuitem_nearest_slot"
-	          android:title="@string/nearest_slot"
+	    <item android:id="@+id/menuitem_nearest_lock"
+	          android:title="@string/nearest_lock"
 	          />
 	    <item android:id="@+id/menuitem_my_location"
 	          android:title="@string/my_location" 
