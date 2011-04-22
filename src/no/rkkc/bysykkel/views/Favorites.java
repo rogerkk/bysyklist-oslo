@@ -21,7 +21,6 @@ package no.rkkc.bysykkel.views;
 import no.rkkc.bysykkel.Constants;
 import no.rkkc.bysykkel.MenuHelper;
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
-import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
@@ -32,7 +31,6 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -52,7 +50,6 @@ import java.util.ArrayList;
 
 public class Favorites extends ListActivity {
 
-    private OsloCityBikeAdapter mOcbAdapter;
     private RackAdapter mRackAdapter;
     private ArrayList<Rack> mListItems = new ArrayList<Rack>();
     private AsyncTask<RowAdapter, RowAdapter, Void> mRackStatsTask;
@@ -68,7 +65,6 @@ public class Favorites extends ListActivity {
         setContentView(R.layout.favorites);
         registerForContextMenu(getListView());
 
-        mOcbAdapter = (OsloCityBikeAdapter) new OsloCityBikeAdapter();
         mRackAdapter = (RackAdapter) new RackAdapter(this);
         setListAdapter(new RowAdapter(this, R.layout.favorites_row, mListItems));
 
@@ -219,31 +215,11 @@ public class Favorites extends ListActivity {
 
             // Load all rack statistics
             for (int i = 0; i < listAdapter.getCount(); i++) {
-                Rack rack = mListItems.get(i);
+                Rack rackFromList = mListItems.get(i);
                 
-                try {
-                    Rack tmpRack = mOcbAdapter.getRack(rack.getId());
-                    
-                    if (tmpRack.hasBikeAndLockInfo()) {
-                        rack.setNumberOfEmptyLocks(tmpRack.getNumberOfEmptyLocks());
-                        rack.setNumberOfReadyBikes(tmpRack.getNumberOfReadyBikes());
-                    } else {
-                        // Set negative values to signalize to RowAdapter rack did not contain any lock/bike info.
-                        rack.setNumberOfEmptyLocks(-1);
-                        rack.setNumberOfReadyBikes(-1);
-                    }
-                        
-                } catch (OsloCityBikeException e) {
-                    Log.v("Test", e.getStackTrace().toString());
-
-                    // Set negative values to signalize to RowAdapter that communication failed
-                    rack.setNumberOfEmptyLocks(-2);
-                    rack.setNumberOfReadyBikes(-2);
-
-                } finally {
-                    mListItems.set(i, rack);
-                    publishProgress(listAdapter);
-                }
+                Rack rack = mRackAdapter.getRack(rackFromList.getId(), true);
+                mListItems.set(i, rack);
+                publishProgress(listAdapter);
             }
             
             return null;
@@ -283,10 +259,8 @@ public class Favorites extends ListActivity {
             wrapper.getRackName().setText(rack.getDescription());
 
             // Display number of ready bikes / free locks
-            if (rack.hasBikeAndLockInfo() && rack.getNumberOfEmptyLocks() == -1) {
+            if (rack.hasBikeAndLockInfo() && !rack.isOnline()) {
                 wrapper.getRackInfo().setText(R.string.rackdialog_not_online);
-            } else if (rack.hasBikeAndLockInfo() && rack.getNumberOfEmptyLocks() == -2) {
-                wrapper.getRackInfo().setText(R.string.error_communication_failed);
             } else if (rack.hasBikeAndLockInfo()) {
                 String strFreeBikes = getContext().getString(R.string.favorites_freebikes);
                 strFreeBikes = String.format(strFreeBikes, rack.getNumberOfReadyBikes());
