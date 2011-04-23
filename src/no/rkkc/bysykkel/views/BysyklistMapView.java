@@ -147,7 +147,9 @@ public void computeScroll() {
         mZoomEventDelayTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                mZoomChangeListener.onZoomChange(BysyklistMapView.this, getZoomLevel(), mLastZoom);
+                if (mPanChangeListener != null) {
+                    mZoomChangeListener.onZoomChange(BysyklistMapView.this, getZoomLevel(), mLastZoom);
+                }
                 mLastZoom = getZoomLevel();
             }
         }, mEventsTimeout);
@@ -160,7 +162,9 @@ public void computeScroll() {
         mPanEventDelayTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                mPanChangeListener.onPanChange(BysyklistMapView.this, getMapCenter(), mLastMapCenter);
+                if (mPanChangeListener != null) {
+                    mPanChangeListener.onPanChange(BysyklistMapView.this, getMapCenter(), mLastMapCenter);
+                }
                 mLastMapCenter = getMapCenter();
             }
         }, mEventsTimeout);

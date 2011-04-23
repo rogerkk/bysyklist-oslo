@@ -92,6 +92,7 @@ public class Map extends MapActivity {
         setupMapView();
         setupInfoPanel();
         setupMyLocationOverlay();
+        setupListeners();
         
         if (isFirstRun()) {
             new RackSyncTask(this).execute((Void[])null);
@@ -113,7 +114,6 @@ public class Map extends MapActivity {
             animateToMyLocationOnFirstFix();
         }
         
-        setupListeners();
     }
 
     private void restoreStateAfterOrientationChange() {
@@ -130,7 +130,7 @@ public class Map extends MapActivity {
         for (RackState rackState: mRackStateCache.values()) {
             Rack rack = rackState.getRack();
             
-            if ((Integer)rack.getId() != mRackOverlay.mHighlightedRackId) {
+            if ((Integer)rack.getId() != mRackOverlay.getHighlightedRackId()) {
                 mRackOverlay.setMarker(rackState.getRack());
             }
         }
@@ -153,14 +153,14 @@ public class Map extends MapActivity {
         // Trigger rack state update on zoom
         mMapView.setOnZoomChangeListener(new BysyklistMapView.OnZoomChangeListener() {
             public void onZoomChange(MapView view, int newZoom, int oldZoom) {
-                mRackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
+                mRackStateThread.getHandler().sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
             }
         });
 
         // Trigger rack state update on panning
         mMapView.setOnPanChangeListener(new BysyklistMapView.OnPanChangeListener() {
             public void onPanChange(MapView view, GeoPoint newCenter, GeoPoint oldCenter) {
-                mRackStateThread.mHandler.sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);     
+                mRackStateThread.getHandler().sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);     
             }
         });
     }
@@ -797,6 +797,10 @@ public class Map extends MapActivity {
             throw new NoSuchElementException("Overlay with rack " + rackId
                     + " doesn't exists");
         }
+        
+        public Integer getHighlightedRackId() {
+            return mHighlightedRackId;
+        }
     }
     
     /**
@@ -877,7 +881,7 @@ public class Map extends MapActivity {
      * to update the information at any time. When an update request is received, the scheduled
      * update is postponed.
      */
-    class RackStateThread extends Thread {
+    public class RackStateThread extends Thread {
           /**
            * We update rack status every minute.
            */
@@ -895,7 +899,11 @@ public class Map extends MapActivity {
            */
           private boolean isDisabled;
           
-          public Handler mHandler;
+          private Handler mHandler;
+
+          public Handler getHandler() {
+            return mHandler;
+          }
 
           public void run() {
               Looper.prepare();
@@ -937,8 +945,12 @@ public class Map extends MapActivity {
                           
                           runOnUiThread(new Runnable() {
                                 public void run() {
-                                    if (mRackOverlay.mHighlightedRackId == null ||
-                                            rack.getId() != mRackOverlay.mHighlightedRackId) {
+                                    if (mRackOverlay == null) {
+                                        return;
+                                    }
+                                    
+                                    if (mRackOverlay.getHighlightedRackId() == null ||
+                                            rack.getId() != mRackOverlay.getHighlightedRackId()) {
                                         mRackOverlay.setMarker(rack);
                                     }
                                 }
@@ -986,6 +998,9 @@ public class Map extends MapActivity {
         }
     }
     
+    public RackStateThread getRackStateThread() {
+        return mRackStateThread;
+    }
 
     /**
      * Stores various Views to avoid instantiating them every time they are used.
@@ -1068,7 +1083,7 @@ public class Map extends MapActivity {
         public MapContext() {
             this.mZoomLevel = mMapView.getZoomLevel();
             this.mMapCenter = mMapView.getMapCenter();
-            this.mHighlightedRack = mRackOverlay.mHighlightedRackId;
+            this.mHighlightedRack = mRackOverlay.getHighlightedRackId();
             this.mRackStateCache = Map.this.mRackStateCache;
         }
 

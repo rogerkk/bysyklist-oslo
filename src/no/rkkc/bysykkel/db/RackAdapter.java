@@ -27,6 +27,7 @@ import android.content.Context;
  */
 
 import android.database.Cursor;
+import android.sax.StartElementListener;
 
 import java.util.ArrayList;
 
@@ -72,7 +73,7 @@ public class RackAdapter extends DatabaseAdapter {
         Rack rack;
         String[] columns={DESCRIPTION, LATITUDE, LONGITUDE, VIEW_COUNTER, STARRED};
         
-        Cursor cursor = getReadableDatabase().query(TABLE, columns, ID + " = " + Integer.toString(id), null, null, null, null);
+        Cursor cursor = getWritableDatabase().query(TABLE, columns, ID + " = " + Integer.toString(id), null, null, null, null);
         
         if (cursor.getCount() == 0) {
             cursor.close();
@@ -126,7 +127,7 @@ public class RackAdapter extends DatabaseAdapter {
     public ArrayList<Integer> getRackIds() {
         String[] columns={ID};
         
-        Cursor cursor = getReadableDatabase().query(TABLE, columns, null, null, null, null, null);
+        Cursor cursor = getWritableDatabase().query(TABLE, columns, null, null, null, null, null);
         
         ArrayList<Integer> rackIds = new ArrayList<Integer>();
         while (cursor.moveToNext()) {
@@ -147,7 +148,7 @@ public class RackAdapter extends DatabaseAdapter {
         
         String[] queryParams = new String[] {minLatitude, maxLatitude, minLongitude, maxLongitude}; 
         
-        Cursor cursor = getReadableDatabase().query(TABLE, columns, 
+        Cursor cursor = getWritableDatabase().query(TABLE, columns, 
                 "latitude > ? and latitude < ? and longitude > ? and longitude < ?", queryParams,
                 null, null, null);
         
@@ -185,7 +186,7 @@ public class RackAdapter extends DatabaseAdapter {
         String selection = "viewcount > 0";
         String order = "starred desc, viewcount desc";
         
-        Cursor cursor = getReadableDatabase().query(TABLE, columns, selection, null, null, null, order);
+        Cursor cursor = getWritableDatabase().query(TABLE, columns, selection, null, null, null, order);
 
         while (cursor.moveToNext() && cursor.getPosition() < limit) {
             int rackId = cursor.getInt(cursor.getColumnIndex(ID));

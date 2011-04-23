@@ -24,6 +24,7 @@ import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import no.rkkc.bysykkel.views.Map;
+import no.rkkc.bysykkel.views.Map.RackStateThread;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -71,6 +72,8 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
         if (mActivity instanceof Map) {
             ((Map)mActivity).initializeMap();
             ((Map)mActivity).animateToMyLocationOnFirstFix();
+            ((Map)mActivity).getRackStateThread().getHandler()
+                .sendEmptyMessage(RackStateThread.UPDATE_VISIBLE_RACKS);
         }
         mSyncDialog.dismiss();
         if (!result) {
