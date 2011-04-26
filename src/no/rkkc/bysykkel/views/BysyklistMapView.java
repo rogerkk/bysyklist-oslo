@@ -22,7 +22,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import com.google.android.maps.GeoPoint;
@@ -97,6 +99,12 @@ public class BysyklistMapView extends MapView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         handleLongpress(event);
+
+        /*
+         * This value is used both by handleLongpress() and the PanChangeListener-part of
+         * computeScroll.
+         */
+        mLastMapCenter = getMapCenter();
         
         return super.onTouchEvent(event);
     }
@@ -117,20 +125,29 @@ public class BysyklistMapView extends MapView {
             mLastMapCenter = getMapCenter();
         }
         
+        
         if (event.getAction() == MotionEvent.ACTION_MOVE) {
-                
+        
             if (!getMapCenter().equals(mLastMapCenter)) {
                 mLongpressTimer.cancel();
             }
-            
-            mLastMapCenter = getMapCenter();
         }
         
         if (event.getAction() == MotionEvent.ACTION_UP) {
             mLongpressTimer.cancel();
         }
         
-        if (event.getPointerCount() > 1) {
+        /**
+         * Must use this Dalvik trick to get around the fact that MotionEvent.getPointerCount() did
+         * not exist until Android 2.0.
+         * 
+         * As long as we DON'T call EventPointerCountWrapper.getPointerCount(), that class does not
+         * get loaded, and we don't get a VerifyError during runtime.
+         */
+        boolean hasMultiTouch = Integer.parseInt(Build.VERSION.SDK) >= 5;
+        int nPointerCount = hasMultiTouch ? EventPointerCountWrapper.getPointerCount(event) : 1;
+        
+        if (nPointerCount > 1) {
             mLongpressTimer.cancel();
         }
     }
@@ -168,9 +185,16 @@ public class BysyklistMapView extends MapView {
                     }
                 }
             }, mEventsTimeout);
-            
-            
-            mLastMapCenter = getMapCenter();
+        }
+    }
+    
+    /**
+     * Wrapping MotionEvent.getPointerCount() since it does not exist in earlier versions of 
+     * Android (<2.0). We must use some Dalvik tricks to get around it. 
+     */
+    static class EventPointerCountWrapper {
+        static int getPointerCount(MotionEvent event) {
+            return event.getPointerCount();
         }
     }
 }
