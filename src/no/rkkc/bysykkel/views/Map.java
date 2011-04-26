@@ -109,7 +109,7 @@ public class Map extends MapActivity {
             // TODO: Should really find a better way to single out these intents
             processIntent(getIntent());
         } else {
-            // Default and most common action.
+            // Default and probably most common action.
             animateToLastKnownLocationIfAvailable();
             animateToMyLocationOnFirstFix();
         }
@@ -925,6 +925,8 @@ public class Map extends MapActivity {
                        */
                       GeoPoint topLeft = mMapView.getProjection().fromPixels(-15, 0);
                       GeoPoint bottomRight = mMapView.getProjection().fromPixels(mMapView.getWidth()+15, mMapView.getHeight()+35);
+                      
+                      Log.v(TAG, "topLeft: lat" + Integer.toString(topLeft.getLatitudeE6()) + " long" + Integer.toString(topLeft.getLongitudeE6()) + ", bottomRight: lat" + Integer.toString(bottomRight.getLatitudeE6()) + " long" + Integer.toString(bottomRight.getLongitudeE6()));
                       
                       Integer[] rackIds = mRackAdapter.getRackIds(topLeft, bottomRight);
 
