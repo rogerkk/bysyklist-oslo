@@ -82,9 +82,9 @@ public class BysyklistMapView extends MapView {
         mLastZoom = this.getZoomLevel();
     }
     
-    public void setOnLongpressListener(BysyklistMapView.OnLongpressListener listener) {
-        mLongpressListener = listener;
-    }
+//    public void setOnLongpressListener(BysyklistMapView.OnLongpressListener listener) {
+//        mLongpressListener = listener;
+//    }
     
     public void setOnZoomChangeListener(BysyklistMapView.OnZoomChangeListener listener) {
         mLastZoom = this.getZoomLevel();
@@ -98,59 +98,53 @@ public class BysyklistMapView extends MapView {
     
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        handleLongpress(event);
+//        handleLongpress(event);
 
-        /*
-         * This value is used both by handleLongpress() and the PanChangeListener-part of
-         * computeScroll.
-         */
-        mLastMapCenter = getMapCenter();
-        
         return super.onTouchEvent(event);
     }
     
-    private void handleLongpress(final MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            mLongpressTimer = new Timer();
-            mLongpressTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    GeoPoint longpressLocation = getProjection().fromPixels((int)event.getX(), 
-                            (int)event.getY());
-                    mLongpressListener.onLongpress(BysyklistMapView.this, longpressLocation);
-                }
-                
-            }, 750);
-            
-            mLastMapCenter = getMapCenter();
-        }
-        
-        
-        if (event.getAction() == MotionEvent.ACTION_MOVE) {
-        
-            if (!getMapCenter().equals(mLastMapCenter)) {
-                mLongpressTimer.cancel();
-            }
-        }
-        
-        if (event.getAction() == MotionEvent.ACTION_UP) {
-            mLongpressTimer.cancel();
-        }
-        
-        /**
-         * Must use this Dalvik trick to get around the fact that MotionEvent.getPointerCount() did
-         * not exist until Android 2.0.
-         * 
-         * As long as we DON'T call EventPointerCountWrapper.getPointerCount(), that class does not
-         * get loaded, and we don't get a VerifyError during runtime.
-         */
-        boolean hasMultiTouch = Integer.parseInt(Build.VERSION.SDK) >= 5;
-        int nPointerCount = hasMultiTouch ? EventPointerCountWrapper.getPointerCount(event) : 1;
-        
-        if (nPointerCount > 1) {
-            mLongpressTimer.cancel();
-        }
-    }
+//    private void handleLongpress(final MotionEvent event) {
+//        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+//            mLongpressTimer = new Timer();
+//            mLongpressTimer.schedule(new TimerTask() {
+//                @Override
+//                public void run() {
+//                    GeoPoint longpressLocation = getProjection().fromPixels((int)event.getX(), 
+//                            (int)event.getY());
+//                    mLongpressListener.onLongpress(BysyklistMapView.this, longpressLocation);
+//                }
+//                
+//            }, 750);
+//            
+//            mLastMapCenter = getMapCenter();
+//        }
+//        
+//        
+//        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+//        
+//            if (!getMapCenter().equals(mLastMapCenter)) {
+//                mLongpressTimer.cancel();
+//            }
+//        }
+//        
+//        if (event.getAction() == MotionEvent.ACTION_UP) {
+//            mLongpressTimer.cancel();
+//        }
+//        
+//        /**
+//         * Must use this Dalvik trick to get around the fact that MotionEvent.getPointerCount() did
+//         * not exist until Android 2.0.
+//         * 
+//         * As long as we DON'T call EventPointerCountWrapper.getPointerCount(), that class does not
+//         * get loaded, and we don't get a VerifyError during runtime.
+//         */
+//        boolean hasMultiTouch = Integer.parseInt(Build.VERSION.SDK) >= 5;
+//        int nPointerCount = hasMultiTouch ? EventPointerCountWrapper.getPointerCount(event) : 1;
+//        
+//        if (nPointerCount > 1) {
+//            mLongpressTimer.cancel();
+//        }
+//    }
     
     @Override
     public void computeScroll() {
@@ -185,6 +179,8 @@ public class BysyklistMapView extends MapView {
                     }
                 }
             }, mEventsTimeout);
+            
+            mLastMapCenter = getMapCenter();
         }
     }
     

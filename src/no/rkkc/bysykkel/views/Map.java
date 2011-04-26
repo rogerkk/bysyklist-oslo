@@ -138,17 +138,17 @@ public class Map extends MapActivity {
 
     private void setupListeners() {
         
-        // Open context menu on longpress
-        mMapView.setOnLongpressListener(new BysyklistMapView.OnLongpressListener() {
-            public void onLongpress(final MapView view, GeoPoint longpressLocation) {
-                mContextMenuGeoPoint = longpressLocation;
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        view.showContextMenu();
-                    }
-                });
-            }
-        });
+//        // Open context menu on longpress
+//        mMapView.setOnLongpressListener(new BysyklistMapView.OnLongpressListener() {
+//            public void onLongpress(final MapView view, GeoPoint longpressLocation) {
+//                mContextMenuGeoPoint = longpressLocation;
+//                runOnUiThread(new Runnable() {
+//                    public void run() {
+//                        view.showContextMenu();
+//                    }
+//                });
+//            }
+//        });
         
         // Trigger rack state update on zoom
         mMapView.setOnZoomChangeListener(new BysyklistMapView.OnZoomChangeListener() {
