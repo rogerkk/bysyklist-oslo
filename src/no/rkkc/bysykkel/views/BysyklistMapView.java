@@ -179,9 +179,9 @@ public class BysyklistMapView extends MapView {
                     }
                 }
             }, mEventsTimeout);
-            
-            mLastMapCenter = getMapCenter();
         }
+
+        mLastMapCenter = getMapCenter();
     }
     
     /**
