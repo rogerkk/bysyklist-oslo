@@ -3,20 +3,20 @@
   xmlns:android="http://schemas.android.com/apk/res/android">
   <ListPreference
     android:key="startup-screen"
-    android:title="Oppstartsskjerm"
-    android:summary="Hvilken skjerm som skal åpnes ved oppstart"
+    android:title="@string/start_screen"
+    android:summary="@string/which_screen"
     android:entries="@array/screen"
     android:entryValues="@array/screen_code"
-    android:dialogTitle="Velg skjerm"
+    android:dialogTitle="@string/choose_screen"
     android:defaultValue="MAP"
     />
   <ListPreference
     android:key="map-mode" 
-    android:title="Karttype"
-    android:summary="Vanlig kart eller satellitt"
+    android:title="@string/map_type"
+    android:summary="@string/map_or_sat"
     android:entries="@array/mode"
     android:entryValues="@array/mode_code"
-    android:dialogTitle="Velg karttype"
+    android:dialogTitle="@string/select_map_type"
     android:defaultValue="MAP"
     />
 </PreferenceScreen>

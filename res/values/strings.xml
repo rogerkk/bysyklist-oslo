@@ -56,4 +56,16 @@
     <string name="content_about">Bysyklist Oslo er utviklet av Roger Kristiansen. Ikonet med den syklende androiden er laget av Alexey Novoselov (<a href="http://www.behance.net/NoavArt/frame">www.behance.net/NoavArt</a>).\n\nFeilrapporter, kodebidrag eller annen tilbakemelding tas imot med takk på <a href="mailto:roger@kind-kristiansen.no">epost</a>.\n\nApplikasjonen er fri programvare, lisensiert under GPL v3. Kildekoden er gjort tilgjengelig <a href="http://gitorious.org/bysyklist">her</a>\n\nHverken utvikleren eller applikasjonen er på noen måte tilknyttet Clear Channel.</string>
     
     <string name="content_help"></string>
+    
+    <string name="start_screen">Oppstartsskjerm</string>
+    <string name="which_screen">Hvilken skjerm som skal åpnes ved oppstart</string>
+    
+    <string name="choose_screen">Velg skerm</string>
+    <string name="map_or_sat">Vanlig kart eller satellitt</string>
+    <string name="select_map_type">Velg karttype</string>
+    <string name="map_type">Karttype</string>
+    
+    <string name="satellite">Satellitt</string>
+    
+    
 </resources>

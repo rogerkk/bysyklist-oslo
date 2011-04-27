@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="screen">
-        <item>Kart</item>
-        <item>Favoritter</item>
+        <item>@string/map</item>
+        <item>@string/favorites</item>
     </string-array>
     <string-array name="screen_code">
         <item>MAP</item>
