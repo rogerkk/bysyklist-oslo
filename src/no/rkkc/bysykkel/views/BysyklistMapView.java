@@ -18,15 +18,15 @@
 
 package no.rkkc.bysykkel.views;
 
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapView;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapView;
 
 public class BysyklistMapView extends MapView {
     
@@ -157,6 +157,7 @@ public void computeScroll() {
 
     // Catch panning
     if (!mLastMapCenter.equals(getMapCenter())) {
+        
         mPanEventDelayTimer.cancel();
         mPanEventDelayTimer = new Timer();
         mPanEventDelayTimer.schedule(new TimerTask() {
@@ -165,9 +166,11 @@ public void computeScroll() {
                 if (mPanChangeListener != null) {
                     mPanChangeListener.onPanChange(BysyklistMapView.this, getMapCenter(), mLastMapCenter);
                 }
-                mLastMapCenter = getMapCenter();
             }
         }, mEventsTimeout);
+        
+        
+        mLastMapCenter = getMapCenter();
     }
 }
 
