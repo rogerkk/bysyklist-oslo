@@ -1,59 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="app_name">Bysyklist Oslo</string>
-	
-	<string name="word_bike">sykkel</string>
+    <string name="app_name">Bysyklist Oslo</string>
+    
+    <string name="word_bike">sykkel</string>
     <string name="word_bikes">sykler</string>
     <string name="word_lock">lås</string>
-	<string name="word_locks">låser</string>
-	<string name="word_close">Lukk</string>
-	
-	<string name="map">Kart</string>
+    <string name="word_locks">låser</string>
+    <string name="word_close">Lukk</string>
+    
+    <string name="map">Kart</string>
     <string name="favorites">Favoritter</string>
     <string name="preferences">Innstillinger</string>
-	<string name="my_location">Min posisjon</string>
+    <string name="my_location">Min posisjon</string>
     <string name="nearest_bike">Nærmeste sykkel</string>
     <string name="find_bike">Sykkel</string>
     <string name="nearest_lock">Nærmeste lås</string>
     <string name="find_lock">Lås</string>
-	
-	<string name="syncdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
-	<string name="syncdialog_error">En feil oppsto under oppdatering av stativer. Dette kan skyldes at ClearChannels tjeneste ikke er tilgjengelig for øyeblikket.\n\nDu kan oppdatere senere, eller forsøke på nytt nå.</string>
-	<string name="syncdialog_retry">Forsøk igjen</string>
-	<string name="syncdialog_later">Senere</string>
-	
-	<string name="searchdialog_title">Søker</string>
-	<string name="searchdialog_message_first">Søker etter ledig %s</string>
-	
-	<string name="rackdialog_title">Om stativet</string>
-	<string name="rackdialog_fetching">Henter data om ledige låser og sykler...</string>
-	<string name="rackdialog_freebikes">Ledige sykler: %d</string>
-	<string name="rackdialog_freelocks">Ledige låser: %d</string>
-	<string name="rackdialog_not_online">Ingen kontakt med stativet.</string>
-	<string name="rackdialog_dismiss">OK</string>
-	
-	<string name="favorites_freebikes">Sykler: %d</string>
-	<string name="favorites_freelocks">Låser: %d</string>
-	<string name="waiting_for_data">Venter på data...</string>
-	
-	<string name="choose_shortcut">Velg snarvei</string>
-	
-	<string name="menu_more">Mer</string>
-	<string name="menu_update_rack_db">Oppdater stativer</string>
-	<string name="menu_refresh_favorites">Oppdater</string>
-	
-	<string name="menu_star_item">Legg til som favoritt</string>
-	<string name="menu_unstar_item">Fjern fra favoritter</string>
-	
-	<string name="about_app">Om Bysyklist Oslo</string>
-	
-	<string name="error_search_failed">En feil oppsto under søket.</string>
-	<string name="error_communication_failed">Feil under kommunikasjon med ClearChannel.</string>
-	
-	<string name="location_waiting">Venter på posisjon</string>
-	<string name="location_not_found">"Kunne ikke fastslå din posisjon"</string>
-	
-	<string name="content_about">Bysyklist Oslo er utviklet av Roger Kristiansen. Ikonet med den syklende androiden er laget av Alexey Novoselov (<a href="http://www.behance.net/NoavArt/frame">www.behance.net/NoavArt</a>).\n\nFeilrapporter, kodebidrag eller annen tilbakemelding tas imot med takk på <a href="mailto:roger@kind-kristiansen.no">epost</a>.\n\nApplikasjonen er fri programvare, lisensiert under GPL v3. Kildekoden er gjort tilgjengelig <a href="http://gitorious.org/bysyklist">her</a>\n\nHverken utvikleren eller applikasjonen er på noen måte tilknyttet Clear Channel.</string>
-	
-	<string name="content_help"></string>
+    
+    <string name="syncdialog_message">Henter og lagrer informasjon om alle sykkelstativene...</string>
+    <string name="syncdialog_error">En feil oppsto under oppdatering av stativer. Dette kan skyldes at ClearChannels tjeneste ikke er tilgjengelig for øyeblikket.\n\nDu kan oppdatere senere, eller forsøke på nytt nå.</string>
+    <string name="syncdialog_retry">Forsøk igjen</string>
+    <string name="syncdialog_later">Senere</string>
+    
+    <string name="searchdialog_title">Søker</string>
+    <string name="searchdialog_message_first">Søker etter ledig %s</string>
+    
+    <string name="rackdialog_title">Om stativet</string>
+    <string name="rackdialog_fetching">Henter data om ledige låser og sykler...</string>
+    <string name="rackdialog_freebikes">Ledige sykler: %d</string>
+    <string name="rackdialog_freelocks">Ledige låser: %d</string>
+    <string name="rackdialog_not_online">Ingen kontakt med stativet.</string>
+    <string name="rackdialog_dismiss">OK</string>
+    
+    <string name="favorites_freebikes">Sykler: %d</string>
+    <string name="favorites_freelocks">Låser: %d</string>
+    <string name="waiting_for_data">Venter på data...</string>
+    
+    <string name="choose_shortcut">Velg snarvei</string>
+    
+    <string name="menu_more">Mer</string>
+    <string name="menu_update_rack_db">Oppdater stativer</string>
+    <string name="menu_refresh_favorites">Oppdater</string>
+    
+    <string name="menu_star_item">Legg til som favoritt</string>
+    <string name="menu_unstar_item">Fjern fra favoritter</string>
+    
+    <string name="about_app">Om Bysyklist Oslo</string>
+    
+    <string name="error_search_failed">En feil oppsto under søket.</string>
+    <string name="error_communication_failed">Feil under kommunikasjon med ClearChannel.</string>
+    
+    <string name="location_waiting">Venter på posisjon</string>
+    <string name="location_not_found">"Kunne ikke fastslå din posisjon"</string>
+    
+    <string name="content_about">Bysyklist Oslo er utviklet av Roger Kristiansen. Ikonet med den syklende androiden er laget av Alexey Novoselov (<a href="http://www.behance.net/NoavArt/frame">www.behance.net/NoavArt</a>).\n\nFeilrapporter, kodebidrag eller annen tilbakemelding tas imot med takk på <a href="mailto:roger@kind-kristiansen.no">epost</a>.\n\nApplikasjonen er fri programvare, lisensiert under GPL v3. Kildekoden er gjort tilgjengelig <a href="http://gitorious.org/bysyklist">her</a>\n\nHverken utvikleren eller applikasjonen er på noen måte tilknyttet Clear Channel.</string>
+    
+    <string name="content_help"></string>
 </resources>
