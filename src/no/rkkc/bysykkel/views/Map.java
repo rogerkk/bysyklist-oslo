@@ -723,7 +723,17 @@ public class Map extends MapActivity {
          */
         public void resetHighlighting() {
             if (mHighlightedRackId != null) {
-                setMarker(getRackState(mHighlightedRackId).getRack());
+                RackState rackState = getRackState(mHighlightedRackId);
+                Rack rack;
+                if (rackState == null) {
+                    // We don't have any state on this rack, just get a fresh object from db.
+                    // This will probably only happen when network is very, very slow.
+                    rack = mRackAdapter.getRack(mHighlightedRackId);
+                } else {
+                    rack = rackState.getRack();
+                }
+                
+                setMarker(rack);
                 mHighlightedRackId = null;
             }
         }

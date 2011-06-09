@@ -57,8 +57,10 @@ public class Rack {
     public Rack(int id, String description, Integer latitude, Integer longitude, Boolean online, Integer emptyLocks, Integer readyBikes) {
         this(id, description, latitude, longitude, null, null, online, emptyLocks, readyBikes);
     }
-
-
+    
+    public Rack() {
+    }
+    
     public int getId() {
         return mId;
     }
