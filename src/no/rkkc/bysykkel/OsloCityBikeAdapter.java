@@ -172,7 +172,7 @@ public class OsloCityBikeAdapter {
 
         try {
             xml = makeWebServiceCall(wsMethod);
-            Log.v(OsloCityBikeAdapter.TAG, xml); // TODO: Remove this logging before release
+//            Log.v(OsloCityBikeAdapter.TAG, xml); // TODO: Remove this logging before release
         } catch (Exception e) {
             throw new OsloCityBikeCommunicationException(e);
         }
