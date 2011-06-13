@@ -65,7 +65,7 @@ public class Favorites extends ListActivity {
         setContentView(R.layout.favorites);
         registerForContextMenu(getListView());
 
-        mRackAdapter = (RackAdapter) new RackAdapter(this);
+        mRackAdapter = RackAdapter.getInstance(this);
         setListAdapter(new RowAdapter(this, R.layout.favorites_row, mListItems));
 
     }

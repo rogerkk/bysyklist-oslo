@@ -85,7 +85,7 @@ public class Map extends MapActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mRackAdapter = new RackAdapter(Map.this);
+        mRackAdapter = RackAdapter.getInstance(Map.this);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 
         setContentView(R.layout.map);

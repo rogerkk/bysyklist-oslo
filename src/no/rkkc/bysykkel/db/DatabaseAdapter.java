@@ -23,7 +23,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-public class DatabaseAdapter extends SQLiteOpenHelper {
+abstract public class DatabaseAdapter extends SQLiteOpenHelper {
 
     public static String TABLE = "racks";
     

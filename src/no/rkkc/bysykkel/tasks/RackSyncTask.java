@@ -52,7 +52,7 @@ public class RackSyncTask extends AsyncTask<Void, Integer, Boolean> {
         super();
         
         this.mActivity = activity;
-        mRackAdapter = new RackAdapter(activity);
+        mRackAdapter = RackAdapter.getInstance(activity);
     }
     
     @Override
