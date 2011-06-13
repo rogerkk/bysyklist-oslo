@@ -26,7 +26,10 @@
         </activity>
 
         <activity android:label="@string/app_name"
-                  android:alwaysRetainTaskState="true" android:launchMode="singleInstance" android:name=".views.Map">
+                  android:alwaysRetainTaskState="true" 
+                  android:launchMode="singleInstance"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:name=".views.Map">
             
             <intent-filter android:label="@string/nearest_bike">
                 <action android:name="no.rkkc.bysykkel.VIEW_MAP" />
@@ -50,7 +53,10 @@
         </activity>
 
         <activity android:label="@string/app_name"
-                  android:alwaysRetainTaskState="true" android:launchMode="singleInstance" android:name=".views.Favorites">
+                  android:alwaysRetainTaskState="true" 
+                  android:launchMode="singleInstance"
+                  android:configChanges="orientation|keyboardHidden" 
+                  android:name=".views.Favorites">
             <intent-filter>
                 <action android:name="no.rkkc.bysykkel.VIEW_FAVORITES" />
                 <category android:name="android.intent.category.DEFAULT" />

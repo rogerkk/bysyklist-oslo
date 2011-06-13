@@ -101,11 +101,10 @@ public class Map extends MapActivity {
 
         initializeMap();
 
-        if (getLastNonConfigurationInstance() != null) {
-            restoreStateAfterOrientationChange();
-        } else if ("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE".equals(getIntent().getAction())
+        if (!isFirstRun() &&
+            ("no.rkkc.bysykkel.FIND_NEAREST_READY_BIKE".equals(getIntent().getAction())
             || "no.rkkc.bysykkel.FIND_NEAREST_EMPTY_LOCK".equals(getIntent().getAction())
-            || "no.rkkc.bysykkel.SHOW_RACK".equals(getIntent().getAction())) {
+            || "no.rkkc.bysykkel.SHOW_RACK".equals(getIntent().getAction()))) {
             // TODO: Should really find a better way to single out these intents
             processIntent(getIntent());
         } else {
@@ -116,25 +115,25 @@ public class Map extends MapActivity {
         
     }
 
-    private void restoreStateAfterOrientationChange() {
-        MapContext mapContext = (MapContext)getLastNonConfigurationInstance();
-        
-        mMapController.setZoom(mapContext.getZoomLevel());
-        mMapController.setCenter(mapContext.getMapCenter());
-        if (mapContext.mHighlightedRack != null) {
-            highlightRack(mapContext.getHighlightedRack());
-            showRackInfoPanel(mapContext.getHighlightedRack());
-        }
-        mRackStateCache = mapContext.getRackStateCache();
-        
-        for (RackState rackState: mRackStateCache.values()) {
-            Rack rack = rackState.getRack();
-            
-            if ((Integer)rack.getId() != mRackOverlay.getHighlightedRackId()) {
-                mRackOverlay.setMarker(rackState.getRack());
-            }
-        }
-    }
+//    private void restoreStateAfterOrientationChange() {
+//        MapContext mapContext = (MapContext)getLastNonConfigurationInstance();
+//        
+//        mMapController.setZoom(mapContext.getZoomLevel());
+//        mMapController.setCenter(mapContext.getMapCenter());
+//        if (mapContext.mHighlightedRack != null) {
+//            highlightRack(mapContext.getHighlightedRack());
+//            showRackInfoPanel(mapContext.getHighlightedRack());
+//        }
+//        mRackStateCache = mapContext.getRackStateCache();
+//        
+//        for (RackState rackState: mRackStateCache.values()) {
+//            Rack rack = rackState.getRack();
+//            
+//            if ((Integer)rack.getId() != mRackOverlay.getHighlightedRackId()) {
+//                mRackOverlay.setMarker(rackState.getRack());
+//            }
+//        }
+//    }
 
     private void setupListeners() {
         
@@ -221,10 +220,10 @@ public class Map extends MapActivity {
         mRackAdapter.close();
     }
     
-    @Override
-    public Object onRetainNonConfigurationInstance() {
-        return new MapContext();
-    }
+//    @Override
+//    public Object onRetainNonConfigurationInstance() {
+//        return new MapContext();
+//    }
     
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
@@ -1083,36 +1082,36 @@ public class Map extends MapActivity {
         mRackStateCache.put(rack.getId(), new RackState(rack));
     }
     
-    /**
-     * Class for keeping all the context we need to rebuild our map after orientation change
-     */
-    private class MapContext {
-        private int mZoomLevel;
-        private GeoPoint mMapCenter;
-        private Integer mHighlightedRack;
-        private HashMap<Integer, RackState> mRackStateCache;
-
-        public MapContext() {
-            this.mZoomLevel = mMapView.getZoomLevel();
-            this.mMapCenter = mMapView.getMapCenter();
-            this.mHighlightedRack = mRackOverlay.getHighlightedRackId();
-            this.mRackStateCache = Map.this.mRackStateCache;
-        }
-
-        public int getZoomLevel() {
-            return mZoomLevel;
-        }
-
-        public GeoPoint getMapCenter() {
-            return mMapCenter;
-        }
-
-        public Integer getHighlightedRack() {
-            return mHighlightedRack;
-        }
-        
-        public HashMap<Integer, RackState> getRackStateCache() {
-            return mRackStateCache;
-        }
-    }
+//    /**
+//     * Class for keeping all the context we need to rebuild our map after orientation change
+//     */
+//    private class MapContext {
+//        private int mZoomLevel;
+//        private GeoPoint mMapCenter;
+//        private Integer mHighlightedRack;
+//        private HashMap<Integer, RackState> mRackStateCache;
+//
+//        public MapContext() {
+//            this.mZoomLevel = mMapView.getZoomLevel();
+//            this.mMapCenter = mMapView.getMapCenter();
+//            this.mHighlightedRack = mRackOverlay != null ? mRackOverlay.getHighlightedRackId() : null;
+//            this.mRackStateCache = Map.this.mRackStateCache;
+//        }
+//
+//        public int getZoomLevel() {
+//            return mZoomLevel;
+//        }
+//
+//        public GeoPoint getMapCenter() {
+//            return mMapCenter;
+//        }
+//
+//        public Integer getHighlightedRack() {
+//            return mHighlightedRack;
+//        }
+//        
+//        public HashMap<Integer, RackState> getRackStateCache() {
+//            return mRackStateCache;
+//        }
+//    }
 }
