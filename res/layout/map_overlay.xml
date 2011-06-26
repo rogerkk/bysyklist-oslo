@@ -24,14 +24,14 @@
                 android:paddingTop="2dip"
                 android:paddingBottom="2dip"
                 android:paddingLeft="5dip"
-                android:textAppearance="?android:attr/textAppearanceSmallInverse" />
+                android:textAppearance="?android:attr/textAppearanceSmall" />
                
         <TextView
                 android:id="@+id/information"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingLeft="5dip"
-                android:textAppearance="?android:attr/textAppearanceMediumInverse"
+                android:textAppearance="?android:attr/textAppearanceMedium"
                 android:layout_below="@+id/name" />
                
         </no.rkkc.bysykkel.views.RackInfoPanel>

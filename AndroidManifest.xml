@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="no.rkkc.bysykkel" android:versionName="1.1.1" android:versionCode="24">
+      package="no.rkkc.bysykkel" android:versionName="1.1.2" android:versionCode="25">
  
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
  
-    <application android:label="@string/app_name" android:icon="@drawable/launcher_icon">
+    <application android:label="@string/app_name" 
+        android:icon="@drawable/launcher_icon"
+        android:theme="@android:style/Theme.Light">
         
 	   	<uses-library android:name="com.google.android.maps" />
         

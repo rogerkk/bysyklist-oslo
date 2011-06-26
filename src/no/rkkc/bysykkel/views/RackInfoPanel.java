@@ -18,13 +18,10 @@
 
 package no.rkkc.bysykkel.views;
 
-import com.google.android.TransparentPanel;
-
 import no.rkkc.bysykkel.OsloCityBikeAdapter;
-import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import no.rkkc.bysykkel.R;
+import no.rkkc.bysykkel.OsloCityBikeAdapter.OsloCityBikeException;
 import no.rkkc.bysykkel.model.Rack;
-
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -32,6 +29,8 @@ import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.TextView;
+
+import com.google.android.TransparentPanel;
 
 /**
  * Panel for displaying rack name and availability information
