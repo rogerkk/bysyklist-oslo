@@ -18,13 +18,13 @@
 
 package no.rkkc.bysykkel.views;
 
+import java.util.ArrayList;
+
 import no.rkkc.bysykkel.Constants;
 import no.rkkc.bysykkel.MenuHelper;
-import no.rkkc.bysykkel.OsloCityBikeAdapter;
 import no.rkkc.bysykkel.R;
 import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
-
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ListActivity;
@@ -45,8 +45,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-
-import java.util.ArrayList;
 
 public class Favorites extends ListActivity {
 
