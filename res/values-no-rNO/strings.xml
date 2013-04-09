@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Bysyklist Oslo</string>
     
     <string name="word_bike">sykkel</string>
     <string name="word_bikes">sykler</string>

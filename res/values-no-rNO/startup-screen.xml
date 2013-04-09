@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="screen">
+        <item>@string/map</item>
+        <item>@string/favorites</item>
+    </string-array>
+    <string-array name="screen_code">
+        <item>MAP</item>
+        <item>FAVORITES</item>
+    </string-array>
+</resources>
