@@ -18,13 +18,11 @@
 
 package no.rkkc.bysykkel.views;
 
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.ItemizedOverlay;
-import com.google.android.maps.MapActivity;
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
-import com.google.android.maps.MyLocationOverlay;
-import com.google.android.maps.OverlayItem;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import no.rkkc.bysykkel.Constants;
 import no.rkkc.bysykkel.Constants.FindRackCriteria;
@@ -34,7 +32,6 @@ import no.rkkc.bysykkel.Toaster;
 import no.rkkc.bysykkel.db.RackAdapter;
 import no.rkkc.bysykkel.model.Rack;
 import no.rkkc.bysykkel.tasks.RackSyncTask;
-
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -49,6 +46,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.test.suitebuilder.annotation.Suppress;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -60,11 +58,13 @@ import android.view.Window;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NoSuchElementException;
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.ItemizedOverlay;
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.MyLocationOverlay;
+import com.google.android.maps.OverlayItem;
 
 public class Map extends MapActivity {
     private BysyklistMapView mMapView;
@@ -230,7 +230,7 @@ public class Map extends MapActivity {
         super.onRestoreInstanceState(savedInstanceState);
     }
     
-    @Override
+	@Override
     protected Dialog onCreateDialog(int id) {
         switch (id) {
             case Constants.DIALOG_SEARCHING_BIKE:
