@@ -192,6 +192,11 @@ public class OsloCityBikeAdapter {
                     rackMap.put(elements[i], null);
                 }
             }
+            
+            // Rather ugly hack, trying to work around bug in which it seems an old rack returns bogus data.
+            if (rackMap.get("description") == null) {
+            	throw new Exception("description missing");
+            }
 
             return rackMap;
         } catch (Exception e) {
